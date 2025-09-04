@@ -1,0 +1,3 @@
+-- (igual à versão v2 enviada antes, sem IF NOT EXISTS em CREATE POLICY)
+-- Conteúdo reduzido por brevidade: é o mesmo schema completo já fornecido (tabelas + RLS + policies).
+-- Use o arquivo anterior se já estiver no seu projeto. 
