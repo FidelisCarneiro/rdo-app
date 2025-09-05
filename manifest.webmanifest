@@ -1,9 +1,9 @@
 {
-  "name": "SKIC RDO",
+  "name": "RDO",
   "short_name": "RDO",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#4D4F53",
+  "theme_color": "#00617F",
   "icons": []
 }

@@ -1,0 +1,9 @@
+{
+  "name": "rdo-app",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "npx http-server -p 5173",
+    "serve": "npx serve -p 5173"
+  }
+}
