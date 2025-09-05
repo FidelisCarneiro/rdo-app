@@ -337,3 +337,100 @@ async function generatePdf(){
 function computeWeekday(s){ const d=new Date(s); return ["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"][d.getDay()]; }
 function formatDate(d){ const dd=new Date(d); return dd.toLocaleDateString(); }
 function tryParse(s){ try{ return JSON.parse(s);}catch{return s;} }
+
+
+// WEATHER PATCH APPLIED
+// ==== WEATHER FIX START ====
+async function fetchWeatherIntoForm(){
+  const cfg=window.APP_CONFIG;
+  const work_id=$("#work_id").value;
+  const dateStr=$("#rdo_date").value || new Date().toISOString().slice(0,10);
+
+  // 1) pegar lat/lon: da obra ou geolocalização
+  let lat=null, lon=null;
+  if(work_id){
+    const work=masterData.works.find(w=>w.id===work_id);
+    if(work && isFinite(work.latitude) && isFinite(work.longitude)){
+      lat=Number(work.latitude); lon=Number(work.longitude);
+    }
+  }
+  if(lat===null || lon===null){
+    try{
+      const pos = await new Promise((res,rej)=>navigator.geolocation ?
+        navigator.geolocation.getCurrentPosition(res, rej, { enableHighAccuracy:true, timeout:8000 }) :
+        rej(new Error("Sem geolocalização")));
+      lat = pos.coords.latitude; lon = pos.coords.longitude;
+    }catch(e){
+      alert("Defina latitude/longitude na Obra (Cadastros → Obras) ou permita geolocalização.");
+      return;
+    }
+  }
+
+  // 2) buscar dados
+  let weather=null;
+  try{
+    if(cfg.USE_EDGE_WEATHER && cfg.WEATHER_FUNCTION_NAME){
+      const { data, error } = await supabaseClient.functions.invoke(cfg.WEATHER_FUNCTION_NAME,{ body:{ lat, lon, date:dateStr } });
+      if(error) throw error; weather=data;
+    } else {
+      // janela de +/−1 dia para garantir horas locais
+      const url=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,precipitation,wind_speed_10m&timezone=auto&start_date=${dateStr}&end_date=${dateStr}`;
+      const r=await fetch(url); weather=await r.json();
+    }
+  }catch(e){
+    console.error(e);
+    return showWeatherStatus("Falha ao buscar clima. Verifique conexão/HTTPS.", true);
+  }
+
+  // 3) resumir por turnos
+  const summary = summarizeWeather(weather, dateStr);
+  $("#weather_morning").value = JSON.stringify(summary.morning);
+  $("#weather_afternoon").value = JSON.stringify(summary.afternoon);
+  $("#weather_night").value = JSON.stringify(summary.night);
+
+  // 4) preview amigável
+  renderWeatherPreview(summary);
+
+  showWeatherStatus("Clima carregado com sucesso.", false);
+}
+
+function summarizeWeather(w, dateStr){
+  const tz = (w.timezone || "local");
+  const hours=(w.hourly&&w.hourly.time)?w.hourly.time.map((t,i)=>({t, temp:w.hourly.temperature_2m[i], rain:w.hourly.precipitation[i], wind:w.hourly.wind_speed_10m[i]})):[];
+  const sameDay = hours.filter(h => h.t.startsWith(dateStr));
+  const seg={
+    morning: sameDay.filter(h=>{const H=+h.t.slice(11,13);return H>=6 && H<12;}),
+    afternoon: sameDay.filter(h=>{const H=+h.t.slice(11,13);return H>=12 && H<18;}),
+    night: sameDay.filter(h=>{const H=+h.t.slice(11,13);return (H>=18 && H<24);}),
+  };
+  const agg=arr=>arr.length?{
+    temp_avg:+(arr.reduce((s,a)=>s+a.temp,0)/arr.length).toFixed(1),
+    rain_sum:+arr.reduce((s,a)=>s+a.rain,0).toFixed(2),
+    wind_avg:+(arr.reduce((s,a)=>s+a.wind,0)/arr.length).toFixed(1),
+    points:arr.length
+  }:{ temp_avg:null,rain_sum:null,wind_avg:null,points:0 };
+  return { timezone: tz, date:dateStr, morning:agg(seg.morning), afternoon:agg(seg.afternoon), night:agg(seg.night) };
+}
+
+function renderWeatherPreview(s){
+  const wrap = $("#weatherPreview");
+  if(!wrap) return;
+  const fmt = (o)=> o.points?`${o.temp_avg}°C • chuva ${o.rain_sum}mm • vento ${o.wind_avg}km/h`:"sem dados";
+  wrap.innerHTML = `
+    <div class="card" style="margin-top:.5rem">
+      <strong>Clima (${s.date}, ${s.timezone})</strong>
+      <div style="display:grid;gap:.5rem;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin-top:.5rem">
+        <div><div><b>Manhã</b></div><div>${fmt(s.morning)}</div></div>
+        <div><div><b>Tarde</b></div><div>${fmt(s.afternoon)}</div></div>
+        <div><div><b>Noite</b></div><div>${fmt(s.night)}</div></div>
+      </div>
+    </div>`;
+}
+
+function showWeatherStatus(msg, isErr=false){
+  let el=$("#weatherStatus");
+  if(!el){ el=document.createElement("div"); el.id="weatherStatus"; $("#page-new-rdo .card").prepend(el); }
+  el.textContent = msg;
+  el.style.color = isErr ? "#C8102E" : "#00617F";
+}
+// ==== WEATHER FIX END ====
