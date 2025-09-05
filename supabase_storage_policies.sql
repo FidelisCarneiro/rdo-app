@@ -1,10 +1,25 @@
-insert into storage.buckets (id,name,public) values ('attachments','attachments',true) on conflict (id) do nothing;
+-- Bucket público 'attachments'
+insert into storage.buckets (id, name, public) values ('attachments','attachments', true)
+on conflict (id) do nothing;
+
 alter table storage.objects enable row level security;
+
 drop policy if exists "Public read" on storage.objects;
-create policy "Public read" on storage.objects for select using (bucket_id='attachments');
+create policy "Public read" on storage.objects
+  for select
+  using (bucket_id = 'attachments');
+
 drop policy if exists "Authenticated upload" on storage.objects;
-create policy "Authenticated upload" on storage.objects for insert with check (bucket_id='attachments' and auth.role()='authenticated');
+create policy "Authenticated upload" on storage.objects
+  for insert
+  with check (bucket_id = 'attachments' and auth.role() = 'authenticated');
+
 drop policy if exists "Authenticated update" on storage.objects;
-create policy "Authenticated update" on storage.objects for update using (bucket_id='attachments' and auth.role()='authenticated');
+create policy "Authenticated update" on storage.objects
+  for update
+  using (bucket_id = 'attachments' and auth.role() = 'authenticated');
+
 drop policy if exists "Authenticated delete own files" on storage.objects;
-create policy "Authenticated delete own files" on storage.objects for delete using (bucket_id='attachments' and auth.role()='authenticated');
+create policy "Authenticated delete own files" on storage.objects
+  for delete
+  using (bucket_id = 'attachments' and auth.role() = 'authenticated');

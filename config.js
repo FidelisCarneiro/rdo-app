@@ -1,3 +1,4 @@
+// Config do app
 window.APP_CONFIG = {
   SUPABASE_URL: "https://iyizkskjjizqlcoakgrb.supabase.co",
   SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml5aXprc2tqaml6cWxjb2FrZ3JiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY4NjI2NzYsImV4cCI6MjA3MjQzODY3Nn0.DJ-lFWRRtqWDNYu2NYbT-NOWaMy9jFJICBS4TsJveDA",
