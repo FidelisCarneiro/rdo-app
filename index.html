@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RDO - Fidel</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root{
+      --chumbo:#4D4F53; --vermelho:#C8102E; --prata:#BBBCBC; --egeu:#00617F; --egeu-trama:#6599AE;
+      --ceruleo:#0086BF; --ceruleo-trama:#31B1D9; --cinza-escuro:#333F48; --cinza-escuro-trama:#798189; --laranja:#FF6A13; --laranja-trama:#FFA770;
+      --bg:#f7f8f9; --card:#ffffff; --text:#1d232a; --muted:#6b7280;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font:500 15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial}
+    header.topbar{position:sticky;top:0;z-index:10;display:flex;gap:16px;align-items:center;justify-content:space-between;padding:12px 16px;background:linear-gradient(90deg,var(--cinza-escuro),var(--chumbo));color:#fff}
+    header .brand{display:flex;gap:10px;align-items:center}
+    header h1{font-size:18px;margin:0}
+    header nav{display:flex;gap:10px;flex-wrap:wrap}
+    header nav a, header nav button{color:#fff;background:transparent;border:1px solid #ffffff30;border-radius:10px;padding:8px 12px;text-decoration:none;cursor:pointer}
+    header nav a.active{background:#ffffff26}
+    main{max-width:1220px;margin:18px auto;padding:0 16px}
+    section.card{background:var(--card);border:1px solid #e5e7eb;border-radius:16px;padding:16px;margin-bottom:16px;box-shadow:0 1px 3px #00000010}
+    h2{margin:0 0 12px 0;font-size:18px;color:var(--cinza-escuro)}
+    .grid{display:grid;gap:16px}
+    @media(min-width:900px){.grid.cols-2{grid-template-columns:1fr 1fr}.grid.cols-3{grid-template-columns:1fr 1fr 1fr}.grid.cols-4{grid-template-columns:repeat(4,1fr)}}
+    label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+    input, select, textarea{width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:10px;background:#fff}
+    textarea{min-height:90px}
+    .row{display:grid;gap:12px}
+    @media(min-width:700px){.row.cols-2{grid-template-columns:1fr 1fr}.row.cols-3{grid-template-columns:1fr 1fr 1fr}.row.cols-4{grid-template-columns:repeat(4,1fr)}}
+    .actions{display:flex;gap:10px;flex-wrap:wrap}
+    .btn{border:0;border-radius:999px;padding:10px 14px;cursor:pointer}
+    .btn.primary{background:var(--vermelho);color:#fff}
+    .btn.secondary{background:var(--egeu);color:#fff}
+    .btn.ghost{background:#00000008;color:var(--cinza-escuro)}
+    .badge{padding:4px 8px;border-radius:999px;background:#0000000d;color:var(--muted);font-size:12px}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:10px;border-bottom:1px solid #eee;text-align:left}
+    .empty{padding:20px;text-align:center;color:var(--muted)}
+    .pill{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:#f3f4f6;color:#374151;font-size:12px}
+    .footerbar{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+    .hint{font-size:12px;color:var(--muted)}
+    #toast{position:fixed;right:16px;top:16px;z-index:50;background:#111827;color:#fff;padding:10px 14px;border-radius:10px;box-shadow:0 10px 20px #0003;display:none}
+
+    /* Novo RDO: layout por seções + stepper responsivo */
+    .rdo-layout{display:grid;gap:16px}
+    @media(min-width:1000px){.rdo-layout{grid-template-columns:260px 1fr}}
+    .stepper{position:sticky;top:80px;background:var(--card);border:1px solid #e5e7eb;border-radius:12px;padding:12px;height:max-content}
+    .stepper a{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;text-decoration:none;color:var(--cinza-escuro)}
+    .stepper a.active{background:#f3f4f6;font-weight:600}
+    .sec{border:1px solid #e5e7eb;border-radius:12px;background:#fff;margin-bottom:12px}
+    .sec>header{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;cursor:pointer;background:#fafafa;border-bottom:1px solid #eee}
+    .sec h3{margin:0;font-size:16px}
+    .sec .sec-content{padding:14px;display:none}
+    .sec.open .sec-content{display:block}
+    @media(max-width:999px){
+      .rdo-layout{grid-template-columns:1fr}
+      .stepper{position:relative;top:auto;display:flex;overflow:auto;gap:8px}
+      .stepper a{white-space:nowrap;border:1px solid #eee}
+    }
+
+    /* Equipe: cards responsivos em vez de tabela */
+    .equipe-list{display:grid;gap:10px}
+    .equipe-card{
+      display:grid;gap:8px;align-items:center;
+      grid-template-columns: 1fr 120px 1fr 100px 72px; /* nome | status | atividade | hh | +HH */
+      padding:10px;border:1px solid #eee;border-radius:12px;background:#fff;
+    }
+    .equipe-card .name{font-weight:600}
+    .equipe-card .small{padding:8px}
+    @media(max-width:999px){
+      .equipe-card{
+        grid-template-columns: 1fr 1fr;
+        grid-template-areas:
+          "name name"
+          "status atv"
+          "hora add";
+      }
+      .equipe-card .name{grid-area:name}
+      .equipe-card .status{grid-area:status}
+      .equipe-card .atividade{grid-area:atv}
+      .equipe-card .hora{grid-area:hora}
+      .equipe-card .add{grid-area:add; justify-self:end}
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#C8102E"/><path d="M6 13l3 3 9-9" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <h1>RDO - Fidel</h1>
+    </div>
+    <nav id="nav">
+      <a data-tab="#tab-auth" class="active">Login</a>
+      <a data-tab="#tab-dashboard">Dashboard</a>
+      <a data-tab="#tab-rdo">Novo RDO</a>
+      <a data-tab="#tab-lists">Cadastros</a>
+      <button id="btnPrint" class="btn ghost">Imprimir / PDF</button>
+      <button id="btnSignOut" class="btn ghost" style="display:none">Sair</button>
+    </nav>
+  </header>
+
+  <main>
+    <div id="toast"></div>
+
+    <!-- AUTH -->
+    <section id="tab-auth" class="card">
+      <h2>Autenticação</h2>
+      <div class="grid cols-2">
+        <form id="formSignIn" class="card">
+          <h3>Entrar</h3>
+          <label>E-mail</label><input id="inEmail" type="email" required>
+          <label>Senha</label><input id="inPass" type="password" required>
+          <div class="actions"><button class="btn primary">Entrar</button></div>
+          <div class="hint">Use um e-mail de teste no ambiente dev.</div>
+        </form>
+        <form id="formSignUp" class="card">
+          <h3>Criar conta</h3>
+          <label>Nome</label><input id="upNome" required>
+          <label>E-mail</label><input id="upEmail" type="email" required>
+          <label>Telefone</label><input id="upTel" type="tel">
+          <label>Senha</label><input id="upPass" type="password" required>
+          <div class="actions"><button class="btn secondary">Cadastrar</button></div>
+        </form>
+      </div>
+    </section>
+
+    <!-- DASHBOARD -->
+    <section id="tab-dashboard" class="card" style="display:none">
+      <h2>Dashboard</h2>
+      <div class="row cols-4">
+        <div>
+          <label>Projeto</label>
+          <select id="filtroObra"></select>
+        </div>
+        <div>
+          <label>Data inicial</label>
+          <input id="filtroIni" type="date">
+        </div>
+        <div>
+          <label>Data final</label>
+          <input id="filtroFim" type="date">
+        </div>
+        <div class="actions" style="align-items:end">
+          <button class="btn primary" id="btnAplicarFiltros">Aplicar filtros</button>
+        </div>
+      </div>
+      <div class="grid cols-2" style="margin-top:12px">
+        <canvas id="chartHH"></canvas>
+        <canvas id="chartOcorr"></canvas>
+      </div>
+      <div class="grid cols-3" style="margin-top:12px">
+        <div class="card"><h3>Efetivo Dia</h3><div id="kpiEfetivo" class="badge">—</div></div>
+        <div class="card"><h3>HH (30 dias)</h3><div id="kpiHH" class="badge">—</div></div>
+        <div class="card"><h3>Ocorrências (30 dias)</h3><div id="kpiOcorr" class="badge">—</div></div>
+      </div>
+    </section>
+
+    <!-- NOVO RDO -->
+    <section id="tab-rdo" class="card" style="display:none">
+      <h2>Novo RDO</h2>
+
+      <div class="rdo-layout">
+        <aside class="stepper" id="rdoSteps">
+          <a href="#sec-ident" class="active">1. Identificação</a>
+          <a href="#sec-pts">2. PTS & Início</a>
+          <a href="#sec-clima">3. Clima</a>
+          <a href="#sec-hh">4. Equipes & HH</a>
+          <a href="#sec-ocorr">5. Ocorrência / Interferência / Paralisações</a>
+          <a href="#sec-eq">6. Equipamentos</a>
+          <a href="#sec-mat">7. Materiais</a>
+          <a href="#sec-fotos">8. Fotos</a>
+          <a href="#sec-sign">9. Assinatura</a>
+          <a href="#sec-resumo">10. Resumo & Salvar</a>
+        </aside>
+
+        <div class="sections">
+          <!-- 1) Identificação -->
+          <div class="sec open" id="sec-ident">
+            <header><h3>Identificação do RDO</h3><span class="badge">Obrigatório</span></header>
+            <div class="sec-content">
+              <div class="row cols-4">
+                <div><label>Obra</label><select id="rdoObra"></select></div>
+                <div><label>Nº RDO</label><input id="rdoNumero" placeholder="00000001" readonly/></div>
+                <div><label>Data</label><input id="rdoData" type="date" required/></div>
+                <div style="align-self:end"><span id="rdoDow" class="badge">—</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2) PTS & Início -->
+          <div class="sec" id="sec-pts">
+            <header><h3>PTS & Início dos Trabalhos</h3><span class="badge">Obrigatório</span></header>
+            <div class="sec-content">
+              <div class="row cols-4">
+                <div><label>Hora de chegada ao campo</label><input id="horaChegada" type="time" required/></div>
+                <div>
+                  <label>Teve PTS?</label>
+                  <div class="actions">
+                    <label class="pill"><input type="radio" name="pts" value="nao" checked/> Não</label>
+                    <label class="pill"><input type="radio" name="pts" value="sim"/> Sim</label>
+                  </div>
+                </div>
+                <div><label>Número do PTS</label><input id="ptsNumero" placeholder="se aplicável" disabled/></div>
+                <div><label>Hora abertura PTS</label><input id="ptsAbertura" type="time" disabled/></div>
+              </div>
+
+              <div id="wrapAtvPTS" class="row cols-3" style="margin-top:8px; display:none">
+                <div><label>Hora início do trabalho</label><input id="horaInicioTrab" type="time"/></div>
+                <div class="cols-2" style="grid-column: span 2">
+                  <label>Atividade da PTS</label>
+                  <textarea id="atividadesDia" placeholder="Descreva a atividade vinculada ao PTS"></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3) Clima -->
+          <div class="sec" id="sec-clima">
+            <header><h3>Condições Climáticas</h3></header>
+            <div class="sec-content">
+              <div class="row cols-4">
+                <div>
+                  <label>Manhã</label>
+                  <select id="climaManha">
+                    <option value="">—</option><option>Seco</option><option>Chuvas leves</option><option>Chuvas fortes</option><option>Ventos fortes</option>
+                  </select>
+                </div>
+                <div>
+                  <label>Tarde</label>
+                  <select id="climaTarde">
+                    <option value="">—</option><option>Seco</option><option>Chuvas leves</option><option>Chuvas fortes</option><option>Ventos fortes</option>
+                  </select>
+                </div>
+                <div>
+                  <label>Noite</label>
+                  <select id="climaNoite">
+                    <option value="">—</option><option>Seco</option><option>Chuvas leves</option><option>Chuvas fortes</option><option>Ventos fortes</option>
+                  </select>
+                </div>
+                <div class="actions" style="align-items:end"><button id="btnClima" type="button" class="btn ghost">Preencher automaticamente (GPS)</button></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4) Equipes & HH -->
+          <div class="sec" id="sec-hh">
+            <header><h3>Equipes & Horas-Homem</h3></header>
+            <div class="sec-content">
+              <div class="row cols-3" style="margin-bottom:8px">
+                <div><label>Encarregado</label><select id="encSelect"></select></div>
+                <div class="actions" style="align-items:end"><button id="btnCarregaEquipe" type="button" class="btn ghost">Carregar equipe</button></div>
+              </div>
+
+              <!-- cards responsivos -->
+              <div id="tblEquipe" class="equipe-list"></div>
+
+              <!-- adição manual (continua) -->
+              <div class="row cols-4" style="margin-top:12px">
+                <div><label>Colaborador</label><select id="hhColab"></select></div>
+                <div><label>Atividade</label><select id="hhAtividade"></select></div>
+                <div><label>Horas (HH:MM)</label><input id="hhHoras" type="time" step="60" value="08:00"></div>
+                <div class="actions" style="align-items:end"><button id="btnAddHH" class="btn secondary" type="button">Adicionar</button></div>
+              </div>
+              <table id="tblHH" style="margin-top:8px"><thead><tr><th>Colaborador</th><th>Atividade</th><th>Horas</th><th></th></tr></thead><tbody></tbody></table>
+            </div>
+          </div>
+
+          <!-- 5) Ocorrências -->
+          <div class="sec" id="sec-ocorr">
+            <header><h3>Ocorrência / Interferência / Paralisações</h3></header>
+            <div class="sec-content">
+              <div class="row cols-3">
+                <div>
+                  <label>Tipo</label>
+                  <select id="occTipo">
+                    <option value="chuva">Chuvas</option><option value="vento">Ventos</option><option value="atraso_material">Atraso de material</option>
+                    <option value="falha_equip">Falha de equipamento</option><option value="energia">Falta de energia</option><option value="acidente">Acidente</option>
+                    <option value="greve">Greve/Paralisação</option><option value="raios">Raios</option><option value="retrabalho">Retrabalho</option><option value="outros">Outros</option>
+                  </select>
+                </div>
+                <div class="cols-2"><label>Descrição</label><textarea id="occDesc"></textarea></div>
+              </div>
+
+              <!-- aplicar mesma duração a todos -->
+              <div class="row cols-3" id="occApplyAll" style="margin-top:8px">
+                <div>
+                  <label>Aplicar mesma duração a todos</label>
+                  <input id="occAllTime" type="time" step="60" value="08:00">
+                </div>
+                <div class="actions" style="align-items:end">
+                  <button id="btnOccApplyAll" type="button" class="btn ghost">Aplicar</button>
+                </div>
+              </div>
+
+              <div id="occDistrib" style="margin-top:8px">
+                <div class="hint">Defina abaixo quem foi impactado e por quanto tempo (HH:MM):</div>
+                <table id="tblOccDistrib"><thead><tr><th>Colaborador</th><th>Impacto HH:MM</th></tr></thead><tbody></tbody></table>
+              </div>
+
+              <div class="actions" style="margin-top:8px"><button id="btnAddOcc" type="button" class="btn ghost">Adicionar</button></div>
+              <ul id="occLista" class="hint"></ul>
+            </div>
+          </div>
+
+          <!-- 6) Equipamentos -->
+          <div class="sec" id="sec-eq">
+            <header><h3>Equipamentos utilizados</h3></header>
+            <div class="sec-content">
+              <div class="row cols-4">
+                <div><label>Equipamento</label><select id="eqEquip"></select></div>
+                <div><label>Motorista</label><select id="eqMotorista"></select></div>
+                <div><label>Horímetro/Km inicial</label><input id="eqHini" type="number" step="0.1"></div>
+                <div><label>Horímetro/Km final</label><input id="eqHfim" type="number" step="0.1"></div>
+              </div>
+              <div class="actions" style="margin-top:6px"><button id="btnAddEq" class="btn ghost" type="button">Adicionar equipamento</button></div>
+              <table id="tblEq" style="margin-top:8px"><thead><tr><th>Equipamento</th><th>Motorista</th><th>Ini</th><th>Fim</th><th></th></tr></thead><tbody></tbody></table>
+            </div>
+          </div>
+
+          <!-- 7) Materiais -->
+          <div class="sec" id="sec-mat">
+            <header><h3>Materiais</h3></header>
+            <div class="sec-content">
+              <div class="row cols-4">
+                <div><label>Material</label><select id="matItem"></select></div>
+                <div><label>Ação</label><select id="matAcao"><option value="recebido">Recebido</option><option value="utilizado">Utilizado</option></select></div>
+                <div><label>Quantidade</label><input id="matQtde" type="number" step="0.01"></div>
+                <div><label>Unidade</label><input id="matUnid" placeholder="ex.: un, kg, m"></div>
+              </div>
+              <div class="actions" style="margin-top:6px"><button id="btnAddMat" class="btn ghost" type="button">Adicionar material</button></div>
+              <table id="tblMat" style="margin-top:8px"><thead><tr><th>Material</th><th>Ação</th><th>Qtde</th><th>Unid</th><th></th></tr></thead><tbody></tbody></table>
+            </div>
+          </div>
+
+          <!-- 8) Fotos -->
+          <div class="sec" id="sec-fotos">
+            <header><h3>Fotos & Evidências</h3></header>
+            <div class="sec-content">
+              <label>Fotos de atividades (mín. 1 se houver HH)</label>
+              <input id="fotosAtv" type="file" accept="image/*" multiple>
+              <label style="margin-top:8px">Fotos de ocorrências (mín. 1 se houver ocorrências)</label>
+              <input id="fotosOcc" type="file" accept="image/*" multiple>
+            </div>
+          </div>
+
+          <!-- 9) Assinatura -->
+          <div class="sec" id="sec-sign">
+            <header><h3>Assinatura Digital & NFC</h3></header>
+            <div class="sec-content">
+              <div class="grid cols-2">
+                <div class="card" style="border:none; box-shadow:none; padding:0">
+                  <h4>Assinatura</h4>
+                  <canvas id="sigPad" width="400" height="180" style="border:1px dashed #ddd;border-radius:8px;background:#fff"></canvas>
+                  <div class="actions"><button id="btnClearSig" type="button" class="btn ghost">Limpar</button></div>
+                  <div class="hint">Será salva como imagem no Storage junto ao número do RDO.</div>
+                </div>
+                <div class="card" style="border:none; box-shadow:none; padding:0">
+                  <h4>NFC – Vincular Colaborador</h4>
+                  <div class="actions"><button id="btnNFC" type="button" class="btn ghost">Ler crachá NFC</button><span id="nfcStatus" class="badge">Aguardando…</span></div>
+                  <div class="hint">Requer Chrome/Android com Web NFC habilitado.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 10) Resumo & Salvar -->
+          <div class="sec" id="sec-resumo">
+            <header><h3>Resumo & Salvar</h3></header>
+            <div class="sec-content">
+              <label>Materiais / Observações</label><textarea id="rdoResumo"></textarea>
+              <div class="footerbar" style="margin-top:10px">
+                <button id="btnSalvarRDO" class="btn primary">Salvar RDO</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CADASTROS -->
+    <section id="tab-lists" class="card" style="display:none">
+      <h2>Cadastros</h2>
+      <div class="grid cols-3">
+        <div class="card">
+          <h3>Obras</h3>
+          <label>Nome</label><input id="obraNome">
+          <label>Gestor</label><input id="obraGestor">
+          <label>Escopo</label><input id="obraEscopo">
+          <label>Nº Contrato</label><input id="obraContrato">
+          <label>Data Início</label><input id="obraInicio" type="date">
+          <label>Assinatura</label><input id="obraAssin" type="date">
+          <label>Previsão Conclusão</label><input id="obraPrev" type="date">
+          <label>Valor</label><input id="obraValor" type="number" step="0.01">
+          <label>Resp. Técnico</label><input id="obraResp">
+          <label>Nº ART</label><input id="obraART">
+          <div class="actions"><button id="btnAddObra" class="btn secondary">Adicionar</button></div>
+          <div id="listaObras" class="empty">Sem obras</div>
+        </div>
+        <div class="card">
+          <h3>Colaboradores</h3>
+          <label>Nome</label><input id="colabNome">
+          <label>Função</label><input id="colabFuncao">
+          <label>E-mail</label><input id="colabEmail" type="email">
+          <label>Telefone</label><input id="colabTel">
+          <div class="actions"><button id="btnAddColab" class="btn secondary">Adicionar</button></div>
+          <div id="listaColabs" class="empty">Sem colaboradores</div>
+        </div>
+        <div class="card">
+          <h3>Atividades</h3>
+          <label>Obra</label><select id="ativObra"></select>
+          <label>Nome da atividade</label><input id="ativNome">
+          <label>ID do cronograma</label><input id="ativCrono">
+          <label>Prazo (dias)</label><input id="ativPrazo" type="number">
+          <div class="actions"><button id="btnAddAtiv" class="btn secondary">Adicionar</button></div>
+          <div id="listaAtivs" class="empty">Sem atividades</div>
+        </div>
+      </div>
+
+      <div class="grid cols-2" style="margin-top:16px">
+        <div class="card">
+          <h3>Equipamentos</h3>
+          <label>Nome</label><input id="eqcNome">
+          <label>Marca</label><input id="eqcMarca">
+          <label>Modelo</label><input id="eqcModelo">
+          <label>Data</label><input id="eqcData" type="date">
+          <label>Horímetro/Km</label><input id="eqcHKm" type="number" step="0.1">
+          <label>Motorista (colaborador)</label><select id="eqcMotorista"></select>
+          <div class="actions"><button id="btnAddEquip" class="btn secondary">Adicionar</button></div>
+          <div id="listaEquip" class="empty">Sem equipamentos</div>
+        </div>
+        <div class="card">
+          <h3>Materiais</h3>
+          <label>Nome</label><input id="matcNome">
+          <label>Unidade</label><input id="matcUnid" placeholder="ex.: un, kg, m">
+          <div class="actions"><button id="btnAddMatCad" class="btn secondary">Adicionar</button></div>
+          <div id="listaMatCad" class="empty">Sem materiais</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+  // ====== SUPABASE ======
+  const SUPABASE_URL = "https://iyizkskjjizqlcoakgrb.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml5aXprc2tqaml6cWxjb2FrZ3JiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY4NjI2NzYsImV4cCI6MjA3MjQzODY3Nn0.DJ-lFWRRtqWDNYu2NYbT-NOWaMy9jFJICBS4TsJveDA";
+  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // ====== NAV ======
+  const nav = document.getElementById('nav');
+  nav.addEventListener('click', (e)=>{
+    if(e.target.matches('a[data-tab]')){
+      document.querySelectorAll('header nav a').forEach(a=>a.classList.remove('active'));
+      e.target.classList.add('active');
+      document.querySelectorAll('main > section').forEach(s=>s.style.display='none');
+      document.querySelector(e.target.dataset.tab).style.display='block';
+      if(e.target.dataset.tab==='#tab-rdo'){ onOpenRdoTab(); }
+    }
+  });
+  document.getElementById('btnPrint').addEventListener('click', ()=> window.print());
+  function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.style.display='block'; setTimeout(()=>t.style.display='none', 2600); }
+
+  // ====== AUTH ======
+  const formSignIn = document.getElementById('formSignIn');
+  const formSignUp = document.getElementById('formSignUp');
+  const btnSignOut = document.getElementById('btnSignOut');
+
+  formSignIn.addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const email = document.getElementById('inEmail').value;
+    const password = document.getElementById('inPass').value;
+    const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+    if(error){ alert('Erro ao entrar: '+error.message); return; }
+    onAuthChanged();
+  });
+  formSignUp.addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const email = document.getElementById('upEmail').value;
+    const password = document.getElementById('upPass').value;
+    const nome = document.getElementById('upNome').value;
+    const telefone = document.getElementById('upTel').value;
+    const { data, error } = await supabaseClient.auth.signUp({ email, password });
+    if(error){ alert('Erro ao cadastrar: '+error.message); return; }
+    const user = data.user; if(user){ await supabaseClient.from('profiles').insert({ id:user.id, nome, telefone }); }
+    alert('Conta criada! Faça login.');
+  });
+  btnSignOut.addEventListener('click', async ()=>{ await supabaseClient.auth.signOut(); onAuthChanged(); });
+
+  async function onAuthChanged(){
+    const { data:{ user } } = await supabaseClient.auth.getUser();
+    const isLogged = !!user;
+    document.getElementById('btnSignOut').style.display = isLogged ? 'inline-flex' : 'none';
+    document.querySelectorAll('main > section').forEach(s=>s.style.display='none');
+    document.querySelector(isLogged ? '#tab-dashboard' : '#tab-auth').style.display='block';
+    document.querySelectorAll('header nav a').forEach(a=>a.classList.remove('active'));
+    document.querySelector(`header nav a[data-tab='${isLogged?'#tab-dashboard':'#tab-auth'}']`).classList.add('active');
+    if(isLogged){ await carregarCombos(); await carregarDashboard(); }
+  }
+  onAuthChanged();
+
+  // ====== HELPERS ======
+  const gid = (id)=> document.getElementById(id);
+  const val = (id)=>{ const el=gid(id); return el && 'value' in el ? (el.value??'').toString().trim(): ''; };
+  const num = (id)=>{ const el=gid(id); if(!el) return null; const v = el.value; return v? Number(v): null; };
+  const todayISO = ()=> new Date().toISOString().slice(0,10);
+  const DEFAULT_HH = '08:00';
+  const toHours = (t)=>{ if(!t) return 0; const [h,m] = t.split(':').map(Number); return (h||0)+((m||0)/60); };
+
+  function fillSelect(id, data, valueField, textField, addAll){
+    const sel = gid(id); if(!sel) return; sel.innerHTML='';
+    if(addAll) sel.append(new Option('Todas',''));
+    (data||[]).forEach(r=> sel.append(new Option(r[textField], r[valueField])) );
+  }
+
+  // ====== CADASTROS ======
+  const btnAddObra = document.getElementById('btnAddObra');
+  const btnAddColab = document.getElementById('btnAddColab');
+  const btnAddAtiv = document.getElementById('btnAddAtiv');
+  const btnAddEquip = document.getElementById('btnAddEquip');
+  const btnAddMatCad = document.getElementById('btnAddMatCad');
+
+  btnAddObra?.addEventListener('click', async()=>{
+    const row = {
+      nome:val('obraNome'), gestor:val('obraGestor'), escopo:val('obraEscopo'), numero_contrato:val('obraContrato'),
+      data_inicio:val('obraInicio')||null, data_assinatura:val('obraAssin')||null, previsao_conclusao:val('obraPrev')||null,
+      valor:num('obraValor'), responsavel_tecnico:val('obraResp'), numero_art:val('obraART')
+    };
+    const { error } = await supabaseClient.from('obras').insert(row); if(error){alert('Erro: '+error.message);return}
+    await carregarCombos(); listarObras();
+  });
+
+  btnAddColab?.addEventListener('click', async()=>{
+    const row = { nome:val('colabNome'), funcao:val('colabFuncao'), email:val('colabEmail'), telefone:val('colabTel') };
+    const { error } = await supabaseClient.from('colaboradores').insert(row); if(error){alert('Erro: '+error.message);return}
+    await carregarCombos(); listarColabs();
+  });
+
+  btnAddAtiv?.addEventListener('click', async()=>{
+    const obra_id = gid('ativObra').value||null;
+    const row = { obra_id, nome:val('ativNome'), cronograma_id:val('ativCrono'), prazo: num('ativPrazo') };
+    const { error } = await supabaseClient.from('atividades').insert(row); if(error){alert('Erro: '+error.message);return}
+    await carregarCombos(); listarAtivs();
+  });
+
+  btnAddEquip?.addEventListener('click', async()=>{
+    const motorista_id = gid('eqcMotorista').value || null;
+    const row = { nome:val('eqcNome'), marca:val('eqcMarca'), modelo:val('eqcModelo'), data:val('eqcData')||null, horimetro_km:num('eqcHKm'), motorista_id };
+    const { error } = await supabaseClient.from('equipamentos').insert(row); if(error){alert('Erro: '+error.message);return}
+    await carregarCombos(); listarEquip();
+  });
+
+  btnAddMatCad?.addEventListener('click', async()=>{
+    const row = { nome:val('matcNome'), unidade:val('matcUnid') };
+    const { error } = await supabaseClient.from('materiais').insert(row); if(error){alert('Erro: '+error.message);return}
+    await carregarCombos(); listarMatCad();
+  });
+
+  async function listarObras(){ const { data, error } = await supabaseClient.from('obras').select('*').order('created_at',{ascending:false});
+    gid('listaObras').innerHTML = error? ('<div class="hint">Crie a tabela obras</div>') : (data?.length? data.map(o=>`<div class="pill">${o.nome} — ${o.gestor||'—'}</div>`).join('') : 'Sem obras'); }
+  async function listarColabs(){ const { data, error } = await supabaseClient.from('colaboradores').select('*').order('created_at',{ascending:false});
+    gid('listaColabs').innerHTML = error? ('<div class="hint">Crie a tabela colaboradores</div>') : (data?.length? data.map(o=>`<div class="pill">${o.nome} — ${o.funcao||'—'}</div>`).join('') : 'Sem colaboradores'); }
+  async function listarAtivs(){ const { data, error } = await supabaseClient.from('atividades').select('*, obras(nome)').order('created_at',{ascending:false});
+    gid('listaAtivs').innerHTML = error? ('<div class="hint">Crie a tabela atividades</div>') : (data?.length? data.map(a=>`<div class="pill">${a.nome} — ${a.obras?.nome||'—'}</div>`).join('') : 'Sem atividades'); }
+  async function listarEquip(){ const { data, error } = await supabaseClient.from('equipamentos').select('*, colaboradores(nome)').order('created_at',{ascending:false});
+    gid('listaEquip').innerHTML = error? ('<div class="hint">Crie a tabela equipamentos</div>') : (data?.length? data.map(e=>`<div class="pill">${e.nome} - ${e.marca||''} ${e.modelo||''}</div>`).join('') : 'Sem equipamentos'); }
+  async function listarMatCad(){ const { data, error } = await supabaseClient.from('materiais').select('*').order('created_at',{ascending:false});
+    gid('listaMatCad').innerHTML = error? ('<div class="hint">Crie a tabela materiais</div>') : (data?.length? data.map(m=>`<div class="pill">${m.nome} (${m.unidade||''})</div>`).join('') : 'Sem materiais'); }
+
+  async function carregarCombos(){
+    let { data: obras } = await supabaseClient.from('obras').select('id, nome').order('nome');
+    fillSelect('filtroObra', obras, 'id','nome', true);
+    fillSelect('rdoObra', obras, 'id','nome', false);
+    fillSelect('ativObra', obras, 'id','nome', false);
+
+    let { data: cols } = await supabaseClient.from('colaboradores').select('id, nome').order('nome');
+    fillSelect('hhColab', cols, 'id','nome', false);
+    fillSelect('eqMotorista', cols, 'id','nome', false);
+    fillSelect('eqcMotorista', cols, 'id','nome', true);
+    fillSelect('encSelect', cols, 'id','nome', true);
+
+    let { data: atvs } = await supabaseClient.from('atividades').select('id, nome').order('nome');
+    fillSelect('hhAtividade', atvs, 'id','nome', false);
+
+    let { data: eqs } = await supabaseClient.from('equipamentos').select('id, nome').order('nome');
+    fillSelect('eqEquip', eqs, 'id','nome', false);
+
+    let { data: mats } = await supabaseClient.from('materiais').select('id, nome, unidade').order('nome');
+    fillSelect('matItem', mats, 'id','nome', false);
+
+    listarObras(); listarColabs(); listarAtivs(); listarEquip(); listarMatCad();
+  }
+
+  // ====== RDO ======
+  // seções + stepper
+  function setupRdoSections(){
+    document.querySelectorAll('.sec > header').forEach(h=>{
+      h.addEventListener('click',()=> h.parentElement.classList.toggle('open'));
+    });
+    const setActiveStep = (hash)=>{
+      document.querySelectorAll('#rdoSteps a').forEach(a=> a.classList.toggle('active', a.getAttribute('href') === hash));
+    };
+    document.querySelectorAll('#rdoSteps a').forEach(a=>{
+      a.addEventListener('click',(e)=>{
+        e.preventDefault();
+        const id = a.getAttribute('href');
+        const sec = document.querySelector(id);
+        if(!sec) return;
+        sec.classList.add('open');
+        sec.scrollIntoView({behavior:'smooth', block:'start'});
+        setActiveStep(id);
+      });
+    });
+    const obs = new IntersectionObserver((entries)=>{
+      entries.forEach(en=>{ if(en.isIntersecting) setActiveStep('#'+en.target.id); });
+    },{ rootMargin:'-40% 0px -55% 0px', threshold:0 });
+    document.querySelectorAll('.sec').forEach(sec=> obs.observe(sec));
+  }
+
+  // data hoje + DOW
+  function initRdoDate(){
+    const rdoData = gid('rdoData');
+    if(rdoData){ rdoData.value = todayISO(); const d = new Date(rdoData.value); gid('rdoDow').textContent = d.toLocaleDateString('pt-BR',{weekday:'long'}); }
+    rdoData?.addEventListener('change', ()=>{ const d = new Date(rdoData.value); gid('rdoDow').textContent = d.toLocaleDateString('pt-BR',{weekday:'long'}); });
+  }
+
+  // autonumeração por obra
+  async function fetchNextRdoNumber(obra_id){
+    if(!obra_id) return;
+    let q = supabaseClient.from('rdo').select('numero').eq('obra_id', obra_id).order('numero',{ascending:false}).limit(1);
+    const { data, error } = await q;
+    let next = 1;
+    if(!error && data && data.length){
+      const last = parseInt((data[0].numero||'0').replace(/\D/g,''),10);
+      next = isNaN(last)? 1 : (last+1);
+    }
+    const nStr = String(next).padStart(8,'0');
+    const numEl = gid('rdoNumero'); if(numEl) numEl.value = nStr;
+  }
+  gid('rdoObra')?.addEventListener('change', (e)=> fetchNextRdoNumber(e.target.value));
+
+  // PTS condicional
+  function applyPtsVisibility(){
+    const sim = (document.querySelector('input[name="pts"]:checked')?.value==='sim');
+    const wrap = gid('wrapAtvPTS');
+    if(wrap){
+      wrap.style.display = sim ? 'grid' : 'none';
+      gid('horaInicioTrab')?.toggleAttribute('required', sim);
+      gid('atividadesDia')?.toggleAttribute('required', sim);
+      gid('ptsNumero')?.toggleAttribute('disabled', !sim);
+      gid('ptsAbertura')?.toggleAttribute('disabled', !sim);
+    }
+  }
+  document.querySelectorAll('input[name="pts"]').forEach(r=> r.addEventListener('change', applyPtsVisibility));
+
+  // HH e equipe
+  const hhRows = []; const occRows = []; const eqRows = []; const matRows = [];
+  const tblHH = document.querySelector('#tblHH tbody');
+  function renderHH(){ if(!tblHH) return; tblHH.innerHTML = hhRows.map((r,i)=>`<tr><td>${r.colaborador_nome}</td><td>${r.atividade_nome}</td><td>${r.horas_str||r.horas?.toFixed(2)}</td><td><button data-i="${i}" class="btn ghost">X</button></td></tr>`).join(''); }
+  tblHH?.addEventListener('click',(e)=>{ if(e.target.tagName==='BUTTON'){ hhRows.splice(Number(e.target.dataset.i),1); renderHH(); } });
+  gid('btnAddHH')?.addEventListener('click', ()=>{
+    const colabSel = gid('hhColab'); const ativSel = gid('hhAtividade'); const horasTime = gid('hhHoras')? gid('hhHoras').value||DEFAULT_HH : DEFAULT_HH;
+    if(!colabSel?.value || !ativSel?.value){ alert('Selecione colaborador e atividade.'); return; }
+    const horas = toHours(horasTime);
+    const row = { colaborador_id: colabSel.value, colaborador_nome: colabSel.options[colabSel.selectedIndex].text,
+                  atividade_id: ativSel.value, atividade_nome: ativSel.options[ativSel.selectedIndex].text, horas, horas_str: horasTime };
+    hhRows.push(row); renderHH();
+  });
+
+  // equipe por encarregado (cards)
+  let equipeState = []; // [{id, nome, status, atvs:[{atividade_id, horas, horas_str}]}]
+  gid('btnCarregaEquipe')?.addEventListener('click', async()=>{
+    const encId = gid('encSelect')?.value;
+    if(!encId){ alert('Escolha o encarregado'); return; }
+    let equipe = [];
+    try{ const { data } = await supabaseClient.from('colaboradores').select('id, nome').eq('encarregado_id', encId).order('nome'); equipe = data||[]; }catch(_){}
+    if(!equipe.length){ const { data } = await supabaseClient.from('colaboradores').select('id, nome').neq('id', encId).order('nome'); equipe = data||[]; }
+    equipeState = (equipe||[]).map(c=> ({ id:c.id, nome:c.nome, status:'presente', atvs:[] }));
+    renderEquipe(); renderOccDistrib();
+  });
+
+  function renderEquipe(){
+    const wrap = gid('tblEquipe'); if(!wrap) return;
+    const atvOpts = gid('hhAtividade')?.innerHTML || '';
+    wrap.innerHTML = (equipeState||[]).map((c,i)=>`
+      <div class="equipe-card" data-i="${i}">
+        <div class="name">${c.nome}</div>
+        <div class="status">
+          <select data-i="${i}" class="selStatus small">
+            <option value="presente"${c.status==='presente'?' selected':''}>Presente</option>
+            <option value="ausente"${c.status==='ausente'?' selected':''}>Ausente</option>
+            <option value="atrasado"${c.status==='atrasado'?' selected':''}>Atrasado</option>
+            <option value="transferido"${c.status==='transferido'?' selected':''}>Transferido</option>
+            <option value="emprestado"${c.status==='emprestado'?' selected':''}>Emprestado</option>
+          </select>
+        </div>
+        <div class="atividade">
+          <select data-i="${i}" class="selAtvRow small">${atvOpts}</select>
+        </div>
+        <div class="hora">
+          <input data-i="${i}" type="time" class="inHRow small" step="60" value="${DEFAULT_HH}">
+        </div>
+        <div class="add">
+          <button data-i="${i}" class="btn ghost btnAddRowHH">+ HH</button>
+        </div>
+      </div>
+    `).join('');
+  }
+  gid('tblEquipe')?.addEventListener('change',(e)=>{
+    const i = e.target.getAttribute('data-i'); if(i==null) return;
+    if(e.target.classList.contains('selStatus')) equipeState[i].status = e.target.value;
+  });
+  gid('tblEquipe')?.addEventListener('click',(e)=>{
+    if(!e.target.classList.contains('btnAddRowHH')) return;
+    const i = e.target.getAttribute('data-i'); if(i==null) return;
+    const card = e.target.closest('.equipe-card');
+    const atvSel = card.querySelector('.selAtvRow'); const timeEl = card.querySelector('.inHRow');
+    if(!atvSel?.value){ alert('Escolha uma atividade'); return; }
+    const horas_str = timeEl.value || DEFAULT_HH; const horas = toHours(horas_str);
+    equipeState[i].atvs.push({ atividade_id: atvSel.value, horas, horas_str });
+    const colabId = equipeState[i].id, colabNome = equipeState[i].nome, atvNome = atvSel.options[atvSel.selectedIndex].text;
+    hhRows.push({ colaborador_id:colabId, colaborador_nome:colabNome, atividade_id:atvSel.value, atividade_nome:atvNome, horas, horas_str });
+    renderHH();
+  });
+
+  // ocorrências
+  function renderOccDistrib(){
+    const tb = gid('tblOccDistrib')?.querySelector('tbody'); if(!tb) return;
+    tb.innerHTML = (equipeState||[]).map(c=>`
+      <tr><td>${c.nome}</td><td><input type="time" step="60" value="${DEFAULT_HH}" data-cid="${c.id}" class="occTime"/></td></tr>
+    `).join('');
+  }
+  gid('btnOccApplyAll')?.addEventListener('click', ()=>{
+    const t = gid('occAllTime')?.value || DEFAULT_HH;
+    document.querySelectorAll('.occTime').forEach(inp=> inp.value = t);
+  });
+  gid('btnAddOcc')?.addEventListener('click', ()=>{
+    const tipo = gid('occTipo')?.value || 'outros';
+    const desc = (gid('occDesc')?.value||'').trim();
+    if(!desc){ alert('Descreva a ocorrência'); return; }
+    const times = Array.from(document.querySelectorAll('.occTime'))
+      .map(inp=>({ cid: inp.getAttribute('data-cid'), hh: toHours(inp.value||DEFAULT_HH), hh_str: (inp.value||DEFAULT_HH) }))
+      .filter(x=> x.hh>0);
+    const total = times.reduce((a,b)=>a+b.hh,0);
+    occRows.push({ tipo, descricao:desc, total_h: total, distrib: times });
+    gid('occLista').innerHTML = occRows.map((o,i)=>`<li>#${i+1} ${o.tipo} - ${o.descricao} (Total ${o.total_h.toFixed(2)} h)</li>`).join('');
+    gid('occDesc').value=''; document.querySelectorAll('.occTime').forEach(inp=> inp.value=DEFAULT_HH);
+  });
+
+  // assinatura
+  const sig = gid('sigPad'); let drawing=false, last=null;
+  if(sig){
+    const ctx = sig.getContext('2d');
+    const start = (x,y)=>{ drawing=true; last={x,y}; };
+    const move = (x,y)=>{ if(!drawing) return; ctx.beginPath(); ctx.moveTo(last.x,last.y); ctx.lineTo(x,y); ctx.stroke(); last={x,y}; };
+    const end = ()=> drawing=false;
+    sig.addEventListener('mousedown', e=> start(e.offsetX,e.offsetY));
+    sig.addEventListener('mousemove', e=> move(e.offsetX,e.offsetY));
+    sig.addEventListener('mouseup', end); sig.addEventListener('mouseleave', end);
+    sig.addEventListener('touchstart', e=>{ const r=sig.getBoundingClientRect(); const t=e.touches[0]; start(t.clientX-r.left, t.clientY-r.top); e.preventDefault(); }, {passive:false});
+    sig.addEventListener('touchmove', e=>{ const r=sig.getBoundingClientRect(); const t=e.touches[0]; move(t.clientX-r.left, t.clientY-r.top); e.preventDefault(); }, {passive:false});
+    sig.addEventListener('touchend', end);
+    gid('btnClearSig')?.addEventListener('click', ()=>{ ctx.clearRect(0,0,sig.width,sig.height); });
+  }
+  async function uploadSignature(rdoNum, rdoId){
+    if(!sig) return null;
+    return new Promise((resolve)=>{
+      sig.toBlob(async (blob)=>{
+        if(!blob){ resolve(null); return; }
+        const path = `rdo/${rdoNum}/assinatura.png`;
+        const { error } = await supabaseClient.storage.from('rdo_fotos').upload(path, blob, { upsert:true });
+        if(error){ console.warn('assinatura upload', error); resolve(null); return; }
+        try{
+          const { data } = supabaseClient.storage.from('rdo_fotos').getPublicUrl(path);
+          await supabaseClient.from('rdo').update({ assinatura_url: data.publicUrl }).eq('id', rdoId);
+        }catch(_){}
+        resolve(path);
+      }, 'image/png');
+    });
+  }
+
+  // NFC
+  const btnNFC = gid('btnNFC'); const nfcStatus = gid('nfcStatus');
+  btnNFC?.addEventListener('click', async()=>{
+    if(!('NDEFReader' in window)){ if(nfcStatus){ nfcStatus.textContent='NFC não suportado'; nfcStatus.className='badge'; } return; }
+    try{
+      const reader = new NDEFReader(); await reader.scan(); if(nfcStatus){ nfcStatus.textContent='Aproxime o crachá…'; }
+      reader.onreading = async (event)=>{
+        const idHex = [...new Uint8Array(event.serialNumber? hexToBytes(event.serialNumber): event.message.records?.[0]?.data||[])].map(b=>b.toString(16).padStart(2,'0')).join('');
+        if(nfcStatus){ nfcStatus.textContent='TAG: '+idHex.slice(0,16)+'…'; }
+        const colSel = gid('hhColab'); if(colSel?.value){ await supabaseClient.from('colaboradores').update({ nfc_tag:idHex }).eq('id', colSel.value); }
+      };
+    }catch(err){ if(nfcStatus){ nfcStatus.textContent='NFC erro: '+err.message; } }
+  });
+  function hexToBytes(hex){ const bytes=[]; for(let c=0;c<hex.length;c+=2) bytes.push(parseInt(hex.substr(c,2),16)); return new Uint8Array(bytes); }
+
+  // fotos
+  async function uploadFotos(inputId, rdo_id, pasta, rdoNum, tipoPrefix){
+    const inp = gid(inputId); if(!inp || !inp.files || !inp.files.length) return;
+    let count = 1;
+    for(const f of inp.files){
+      const seq = String(count).padStart(4,'0');
+      const ext = (f.name.split('.').pop()||'jpg').toLowerCase();
+      const base = tipoPrefix ? `${rdoNum}_${tipoPrefix}_${seq}` : `${rdoNum}_${seq}`;
+      const path = `rdo/${rdoNum}/${pasta}/${base}.${ext}`;
+      try{ const { error } = await supabaseClient.storage.from('rdo_fotos').upload(path, f, { upsert:false }); if(error) console.warn(error); }
+      catch(err){ console.warn('upload', err); }
+      count++;
+    }
+  }
+
+  // salvar RDO
+  gid('btnSalvarRDO')?.addEventListener('click', async()=>{
+    const obra_id = gid('rdoObra')?.value; if(!obra_id){ alert('Selecione a obra'); return; }
+    const numero = (gid('rdoNumero')?.value||'').padStart(8,'0');
+    const data = gid('rdoData')?.value; if(!data){ alert('Informe a data'); return; }
+    if(!val('horaChegada')){ alert('Informe hora de chegada'); return; }
+
+    const pts = (document.querySelector('input[name="pts"]:checked')?.value==='sim');
+    if(pts){
+      if(!val('horaInicioTrab')){ alert('Hora de início obrigatória quando há PTS'); return; }
+      if(!val('atividadesDia')){ alert('Preencha Atividade da PTS'); return; }
+    }
+
+    if(hhRows.length && !(gid('fotosAtv')?.files?.length)){ alert('Adicione pelo menos 1 foto de atividade.'); return; }
+    if(occRows.length && !(gid('fotosOcc')?.files?.length)){ alert('Adicione pelo menos 1 foto de ocorrência.'); return; }
+
+    const row = {
+      obra_id, numero, data,
+      clima_manha: val('climaManha'), clima_tarde: val('climaTarde'), clima_noite: val('climaNoite'), resumo: val('rdoResumo'),
+      hora_chegada: val('horaChegada'), teve_pts: pts, pts_numero: pts? val('ptsNumero'): null, pts_abertura: pts? val('ptsAbertura'): null,
+      inicio_trabalho: pts? val('horaInicioTrab'): null, atividades_dia: pts? val('atividadesDia'): null
+    };
+    const { data:auth } = await supabaseClient.auth.getUser(); const userId = auth?.user?.id || null; row.created_by = userId;
+
+    const { data: rdoIns, error } = await supabaseClient.from('rdo').insert(row).select('id');
+    if(error){ alert('Erro ao salvar RDO: '+error.message); return; }
+    const rdo_id = rdoIns?.[0]?.id; const rdoNum = numero;
+
+    if(hhRows.length){
+      const hh = hhRows.map(h=> ({ rdo_id, colaborador_id:h.colaborador_id, atividade_id:h.atividade_id, horas:h.horas }));
+      const { error: e2 } = await supabaseClient.from('rdo_hh').insert(hh); if(e2){ alert('HH: '+e2.message); }
+    }
+
+    try{
+      const payload = equipeState.map(c=> ({ rdo_id, colaborador_id:c.id, status:c.status }));
+      if(payload.length){ await supabaseClient.from('rdo_colab_status').insert(payload); }
+    }catch(_){}
+
+    for(const o of occRows){
+      const total = o.total_h || 0;
+      const { data: occIns, error: eO } = await supabaseClient.from('ocorrencias')
+        .insert({ obra_id, rdo_id, tipo:o.tipo, descricao:o.descricao, impacto_prazo_h: total, data });
+      if(!eO){
+        const ocorr_id = occIns?.[0]?.id;
+        if(ocorr_id && o.distrib?.length){
+          const rows = o.distrib.map(x=> ({ ocorrencia_id: ocorr_id, colaborador_id: x.cid, prazo_impactado_h: x.hh }));
+          try{ await supabaseClient.from('ocorrencias_env').insert(rows); }catch(_){}
+        }
+      }
+    }
+
+    if(eqRows.length){
+      const eq = eqRows.map(e=> ({ rdo_id, equipamento_id:e.equipamento_id, motorista_id:e.motorista_id, h_inicial:e.h_ini, h_final:e.h_fim }));
+      try{ const { error: eE } = await supabaseClient.from('rdo_equip').insert(eq); if(eE) console.warn(eE); }catch(_){}
+    }
+    if(matRows.length){
+      const mm = matRows.map(m=> ({ rdo_id, material_id:m.material_id, acao:m.acao, quantidade:m.qtde, unidade:m.unid }));
+      try{ const { error: eM } = await supabaseClient.from('rdo_materiais').insert(mm); if(eM) console.warn(eM); }catch(_){}
+    }
+
+    await uploadSignature(rdoNum, rdo_id);
+    await uploadFotos('fotosAtv', rdo_id, 'atividades', rdoNum, null);
+    if(gid('fotosOcc')?.files?.length){
+      const lastTipo = (occRows.length? occRows[occRows.length-1].tipo : 'ocorrencia');
+      await uploadFotos('fotosOcc', rdo_id, 'ocorrencias', rdoNum, lastTipo);
+    }
+
+    hhRows.splice(0); occRows.splice(0); eqRows.splice(0); matRows.splice(0); renderHH();
+    gid('occLista').innerHTML = ''; gid('tblEq')?.querySelector('tbody')?.replaceChildren(); gid('tblMat')?.querySelector('tbody')?.replaceChildren();
+    document.querySelector("header nav a[data-tab='#tab-dashboard']")?.click();
+    await carregarDashboard(); toast('RDO salvo com sucesso');
+  });
+
+  // equip e materiais (lista visual simples)
+  gid('btnAddEq')?.addEventListener('click', ()=>{
+    const eqSel = gid('eqEquip'); const motSel = gid('eqMotorista');
+    if(!eqSel?.value){ alert('Selecione o equipamento'); return; }
+    eqRows.push({ equipamento_id:eqSel.value, equipamento_nome:eqSel.options[eqSel.selectedIndex].text, motorista_id: motSel?.value||null, motorista_nome: motSel?.value? motSel.options[motSel.selectedIndex].text: '', h_ini: Number(gid('eqHini')?.value||0), h_fim: Number(gid('eqHfim')?.value||0) });
+    const tb = gid('tblEq')?.querySelector('tbody'); if(tb){ tb.innerHTML = eqRows.map((r,i)=>`<tr><td>${r.equipamento_nome}</td><td>${r.motorista_nome||'—'}</td><td>${r.h_ini||''}</td><td>${r.h_fim||''}</td><td><button data-i="${i}" class="btn ghost">X</button></td></tr>`).join(''); }
+    if(gid('eqHini')) gid('eqHini').value=''; if(gid('eqHfim')) gid('eqHfim').value='';
+  });
+  gid('tblEq')?.addEventListener('click',(e)=>{ if(e.target.tagName==='BUTTON'){ eqRows.splice(Number(e.target.dataset.i),1); const tb = gid('tblEq')?.querySelector('tbody'); if(tb){ tb.innerHTML = eqRows.map((r,i)=>`<tr><td>${r.equipamento_nome}</td><td>${r.motorista_nome||'—'}</td><td>${r.h_ini||''}</td><td>${r.h_fim||''}</td><td><button data-i="${i}" class="btn ghost">X</button></td></tr>`).join(''); } } });
+
+  gid('btnAddMat')?.addEventListener('click', ()=>{
+    const mSel = gid('matItem'); if(!mSel?.value){ alert('Selecione material'); return; }
+    const acao = gid('matAcao')? gid('matAcao').value: 'recebido'; const qt = Number(gid('matQtde')?.value||0); const un = gid('matUnid')?.value||'';
+    matRows.push({ material_id:mSel.value, material_nome:mSel.options[mSel.selectedIndex].text, acao, qtde:qt, unid:un });
+    const tb = gid('tblMat')?.querySelector('tbody'); if(tb){ tb.innerHTML = matRows.map((r,i)=>`<tr><td>${r.material_nome}</td><td>${r.acao}</td><td>${r.qtde}</td><td>${r.unid}</td><td><button data-i="${i}" class="btn ghost">X</button></td></tr>`).join(''); }
+    if(gid('matQtde')) gid('matQtde').value=''; if(gid('matUnid')) gid('matUnid').value='';
+  });
+  gid('tblMat')?.addEventListener('click',(e)=>{ if(e.target.tagName==='BUTTON'){ matRows.splice(Number(e.target.dataset.i),1); const tb = gid('tblMat')?.querySelector('tbody'); if(tb){ tb.innerHTML = matRows.map((r,i)=>`<tr><td>${r.material_nome}</td><td>${r.acao}</td><td>${r.qtde}</td><td>${r.unid}</td><td><button data-i="${i}" class="btn ghost">X</button></td></tr>`).join(''); } } });
+
+  // clima
+  document.body.addEventListener('click', async(e)=>{
+    if(e.target && e.target.id==='btnClima'){
+      try{
+        const pos = await new Promise((res,rej)=> navigator.geolocation.getCurrentPosition(res,rej));
+        const lat = pos.coords.latitude.toFixed(4), lon = pos.coords.longitude.toFixed(4);
+        const date = gid('rdoData')?.value || todayISO();
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=precipitation,wind_speed_10m&start_date=${date}&end_date=${date}&timezone=auto`;
+        const resp = await fetch(url); const js = await resp.json();
+        const precip = js.hourly?.precipitation || []; const wind = js.hourly?.wind_speed_10m || [];
+        const avg=(arr,h1,h2)=>{ let s=0,c=0; for(let h=h1; h<=h2; h++){ const i=h; if(arr[i]!=null){ s+=arr[i]; c++; } } return c? s/c: 0; };
+        const chooseWeather=(p,w)=>{ if(w>=40) return 'Ventos fortes'; if(p>=10) return 'Chuvas fortes'; if(p>=1) return 'Chuvas leves'; return 'Seco'; };
+        gid('climaManha').value = chooseWeather(avg(precip,7,11), avg(wind,7,11));
+        gid('climaTarde').value = chooseWeather(avg(precip,12,17), avg(wind,12,17));
+        gid('climaNoite').value = chooseWeather(avg(precip,18,22), avg(wind,18,22));
+      }catch(err){ alert('Clima: habilite geolocalização. '+err.message); }
+    }
+  });
+
+  // dashboard
+  const btnAplicarFiltros = gid('btnAplicarFiltros');
+  let chartHH, chartOc;
+  btnAplicarFiltros?.addEventListener('click', carregarDashboard);
+  async function carregarDashboard(){
+    const obra = gid('filtroObra')?.value || null; const ini = gid('filtroIni')?.value || ''; const fim = gid('filtroFim')?.value || '';
+    const hoje = new Date(); const from = ini || new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate()-30).toISOString().slice(0,10);
+    const to = fim || hoje.toISOString().slice(0,10);
+    let q = supabaseClient.from('rdo_hh').select('horas, colaborador_id, rdo:data!inner(data, obra_id)').gte('data',from).lte('data',to);
+    if(obra) q = q.eq('rdo.obra_id', obra);
+    const { data: hh } = await q;
+    const series = (function aggregateHH(rows){ const map = new Map(); for(const r of rows||[]){ const d = r.rdo?.data; if(!d) continue; map.set(d,(map.get(d)||0)+ (r.horas||0)); } const labels = [...map.keys()].sort(); const values = labels.map(k=> map.get(k)); return { labels, values }; })(hh||[]);
+    drawChart('chartHH','HH por dia', series.labels, series.values);
+    const kpiHH = gid('kpiHH'); if(kpiHH) kpiHH.textContent = (series.values.reduce((a,b)=>a+b,0)).toFixed(1)+' h';
+    const kpiEf = gid('kpiEfetivo'); if(kpiEf) kpiEf.textContent = new Set((hh||[]).map(r=>r.colaborador_id).filter(Boolean)).size || '—';
+    let q2 = supabaseClient.from('ocorrencias').select('tipo, data').gte('data',from).lte('data',to);
+    if(obra) q2 = q2.eq('obra_id', obra);
+    const { data: occ } = await q2;
+    const ocAgg = Object.entries((occ||[]).reduce((a,r)=>{ a[r.tipo]=(a[r.tipo]||0)+1; return a; },{}));
+    drawChart('chartOcorr','Ocorrências por tipo', ocAgg.map(o=>o[0]), ocAgg.map(o=>o[1]));
+    const kpiOc = gid('kpiOcorr'); if(kpiOc) kpiOc.textContent = (occ||[]).length;
+  }
+  function drawChart(id, title, labels, values){
+    const el = document.getElementById(id); if(!el) return; const ctx = el.getContext('2d');
+    const existing = (id==='chartHH')? chartHH: chartOc; if(existing) existing.destroy();
+    const cfg = { type:'line', data:{ labels, datasets:[{ label:title, data:values }] }, options:{ responsive:true, maintainAspectRatio:false } };
+    const c = new Chart(ctx, cfg); if(id==='chartHH') chartHH=c; else chartOc=c;
+  }
+
+  // ao abrir Novo RDO
+  async function onOpenRdoTab(){
+    initRdoDate();
+    applyPtsVisibility();
+    const obraSel = gid('rdoObra'); if(obraSel?.value) await fetchNextRdoNumber(obraSel.value);
+    const hh = gid('hhHoras'); if(hh) hh.value = DEFAULT_HH;
+  }
+
+  // PWA (manifest + service worker injetados)
+  (function(){
+    const manifest = { name:"RDO - Fidel", short_name:"RDO Fidel", start_url:"./", display:"standalone", background_color:"#ffffff", theme_color:"#C8102E",
+      icons:[{src:"data:image/png;base64,iVBORw0KGgo=",sizes:"192x192",type:"image/png"}] };
+    const blob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('link'); link.rel='manifest'; link.href=url; document.head.appendChild(link);
+    const swCode = "const C='rdo-cache-v2';self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(['./'])))});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.map(k=>k!==C&&caches.delete(k))))) });self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)))})";
+    const swBlob = new Blob([swCode], {type:'text/javascript'}); const swUrl = URL.createObjectURL(swBlob);
+    if('serviceWorker' in navigator){ navigator.serviceWorker.register(swUrl).catch(console.warn); }
+  })();
+
+  // inicial
+  window.addEventListener('load', ()=>{
+    document.querySelector('.sec')?.classList.add('open');
+    setupRdoSections();
+    carregarCombos();
+  });
+
+  // mini testes
+  (function tests(){
+    const approx = (a,b)=> Math.abs(a-b) < 1e-9;
+    console.log('[test] toHours 08:30', approx(toHours('08:30'),8.5));
+    console.log('[test] default hh 08:00', (gid('hhHoras')?.value||DEFAULT_HH)===DEFAULT_HH);
+  })();
+  </script>
+</body>
+</html>
