@@ -1,1 +1,0 @@
--- use o schema completo já aplicado anteriormente
