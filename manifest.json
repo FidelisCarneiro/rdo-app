@@ -1,0 +1,9 @@
+{
+  "name": "RDO - Fidel",
+  "short_name": "RDO Fidel",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#C8102E",
+  "icons": []
+}
