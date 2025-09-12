@@ -1,26 +1,15 @@
-# RDO — GitHub Pages ready
-Gerado em 2025-09-05T00:50:25.061099
+# RDO - Fidel (SPA + Supabase + PWA)
+
+Este pacote é a versão multi-arquivo do app da lousa, pronto para publicar no GitHub Pages.
+
+## Rodar localmente
+- Suba um servidor estático (ex.: `python3 -m http.server 5173`), depois abra `http://localhost:5173`.
 
 ## Publicar no GitHub Pages
-1. Crie um repositório e suba **todo o conteúdo da pasta `rdo-app/`** na raiz.
-2. Vá em **Settings → Pages → Deploy from a branch**: escolha `main` e `/ (root)`.
-3. Acesse a URL do Pages. O app é 100% estático.
+1) Faça commit deste conteúdo em `FidelisCarneiro/rdo-app` (na raiz).
+2) Settings → Pages → Deploy from a branch → `main` / root.
 
-## Supabase Auth
-Em **Authentication → URL Configuration**:
-- Site URL: sua URL do GitHub Pages
-- Redirect URLs: adicione sua URL do GitHub Pages e também http://localhost:5173 (para dev)
-
-## Desenvolvimento local
-```bash
-npm run dev
-# abre http://localhost:5173
-```
-
-## NFC (Web NFC)
-- Android + Chrome + HTTPS (ou localhost). iOS não suporta Web NFC no Safari.
-- Crachá com NDEF texto: `email@empresa.com`, um UUID, ou JSON `{"id":"..."}`.
-
-## Clima
-- `USE_EDGE_WEATHER=false` por padrão (usa Open‑Meteo direto). Se fizer `supabase functions deploy weather`, mude para `true` em `config.js`.
-
+## Supabase
+- Rode o SQL em `sql/supabase_schema.sql` para criar as tabelas.
+- Crie o bucket público `rdo_fotos` no Storage.
+- `js/app.js` já aponta para seu Project URL e Anon Key.

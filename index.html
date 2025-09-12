@@ -1,233 +1,290 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>RDO</title>
-  <link rel="manifest" href="./manifest.webmanifest">
-  <meta name="theme-color" content="#00617F"/>
-  <style>
-    :root{
-      --bg:#f6f7f9; --fg:#1f2937; --muted:#6b7280;
-      --brand:#00617F; --brand-2:#0086BF; --danger:#C8102E; --neutral:#4B5563; --card:#fff;
-      --radius:16px;
-    }
-    *{box-sizing:border-box}
-    html,body{margin:0;height:100%}
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Arial,sans-serif;background:var(--bg);color:var(--fg);}
-    header{position:sticky;top:0;z-index:20;background:linear-gradient(180deg, #063543, #073c4c);color:#fff}
-    .container{max-width:1100px;margin:0 auto;padding:1rem}
-    .row{display:flex;gap:.75rem;align-items:center;justify-content:space-between}
-    .brand{font-weight:800;letter-spacing:.5px}
-    .nav{display:flex;gap:.5rem;flex-wrap:wrap}
-    .btn{appearance:none;border:0;border-radius:12px;padding:.55rem .8rem;background:var(--brand);color:#fff;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
-    .btn.secondary{background:var(--danger)}
-    .btn.neutral{background:var(--neutral)}
-    .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,.25);color:#fff}
-    a.btn{text-decoration:none}
-    .btn[disabled]{opacity:.6;cursor:not-allowed}
-    main{padding:1rem}
-    .card{background:var(--card);border-radius:var(--radius);padding:1rem;box-shadow:0 8px 24px rgba(0,0,0,.07);margin-bottom:1rem}
-    .grid{display:grid;gap:1rem}
-    .grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
-    .grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
-    .field input,.field select,.field textarea,input,select,textarea{width:100%;border:1px solid #e5e7eb;border-radius:12px;padding:.6rem .7rem}
-    .muted{color:var(--muted)}
-    .hidden{display:none !important}
-    .table-wrap{overflow:auto;-webkit-overflow-scrolling:touch;border-radius:12px;border:1px solid #e5e7eb}
-    table{width:100%;border-collapse:collapse;min-width:720px}
-    th,td{border-bottom:1px solid #e5e7eb;padding:.6rem;text-align:left;background:#fff}
-    th{background:#fafafa}
-    .gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:.75rem}
-    .thumb{border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;background:#fff}
-    .thumb img,.thumb video{width:100%;height:120px;object-fit:cover}
-    .thumb .cap{font-size:.8rem;padding:.4rem .5rem;display:flex;justify-content:space-between;gap:.5rem;align-items:center}
-    @media (max-width: 920px){ .grid-3{grid-template-columns:repeat(2,minmax(0,1fr))} }
-    @media (max-width: 640px){
-      .container{padding:.75rem}
-      .grid-2,.grid-3{grid-template-columns:1fr}
-      header .nav{display:none}
-      header .row{flex-wrap:wrap}
-      #mobileNavBtn{display:inline-flex}
-    }
-  </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RDO - Fidel</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="stylesheet" href="./css/styles.css">
+  <meta name="theme-color" content="#C8102E"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-  <script defer src="./config.js"></script>
-  <script defer src="./db.js"></script>
-  <script defer src="./app.js"></script>
 </head>
 <body>
-<header>
-  <div class="container">
-    <div class="row">
-      <div class="brand">RDO</div>
-      <nav class="nav" id="mainNav">
-        <a href="#/rdos" id="navRdos" class="btn ghost">RDOs</a>
-        <a href="#/rdo/new" id="navNew" class="btn ghost">Novo RDO</a>
-        <a href="#/cadastros" id="navMasters" class="btn ghost">Cadastros</a>
-      </nav>
-      <div class="row" style="gap:.5rem">
-        <button id="mobileNavBtn" class="btn ghost" style="display:none">Menu</button>
-        <span class="muted" id="userEmail"></span>
-        <button id="logoutBtn" class="btn secondary">Sair</button>
-      </div>
+  <header class="topbar">
+    <div class="brand">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#C8102E"/><path d="M6 13l3 3 9-9" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <h1>RDO - Fidel</h1>
     </div>
-    <div id="mobileNav" class="hidden" style="margin-top:.5rem">
-      <div class="row" style="gap:.5rem;flex-wrap:wrap">
-        <a href="#/rdos" class="btn">RDOs</a>
-        <a href="#/rdo/new" class="btn">Novo RDO</a>
-        <a href="#/cadastros" class="btn">Cadastros</a>
-      </div>
-    </div>
-  </div>
-</header>
+    <nav id="nav">
+      <a data-tab="#tab-auth" class="active">Login</a>
+      <a data-tab="#tab-dashboard">Dashboard</a>
+      <a data-tab="#tab-rdo">Novo RDO</a>
+      <a data-tab="#tab-lists">Cadastros</a>
+      <button id="btnPrint" class="btn ghost">Imprimir / PDF</button>
+      <button id="btnSignOut" class="btn ghost" style="display:none">Sair</button>
+    </nav>
+  </header>
 
-<main class="container">
-  <section id="authArea" class="grid grid-2">
-    <div class="card">
-      <h2>Entrar</h2>
-      <form id="loginForm" class="grid">
-        <input id="login_email" placeholder="email" autocomplete="username">
-        <input id="login_pass" type="password" placeholder="senha" autocomplete="current-password">
-        <button class="btn">Login</button>
-      </form>
-    </div>
-    <div class="card">
-      <h2>Novo cadastro</h2>
-      <form id="registerForm" class="grid">
-        <input id="reg_name" placeholder="nome">
-        <input id="reg_email" placeholder="email">
-        <input id="reg_phone" placeholder="telefone">
-        <input id="reg_pass" type="password" placeholder="senha">
-        <button class="btn">Criar conta</button>
-      </form>
-    </div>
-  </section>
+  <main>
+    <div id="toast"></div>
 
-  <section id="appArea" class="hidden">
-    <section id="page-list-rdo" class="page">
-      <div class="card">
-        <h2>RDOs</h2>
-        <div id="rdoList"></div>
-        <div id="rdoPagination" class="row" style="justify-content:flex-start"></div>
-      </div>
-    </section>
-
-    <section id="page-new-rdo" class="page hidden">
-      <div class="card">
-        <h2>Novo / Editar RDO</h2>
-        <form id="rdoForm" class="grid">
-          <input id="rdo_id" type="hidden">
-          <div class="grid grid-3">
-            <div class="field"><label>Obra</label><select id="work_id"></select></div>
-            <div class="field"><label>Nº RDO</label><input id="rdo_number" type="number"></div>
-            <div class="field"><label>Data</label><input id="rdo_date" type="date"></div>
-          </div>
-          <div class="grid grid-3">
-            <div class="field"><label>Dia da semana</label><input id="weekday"></div>
-            <div class="field" style="display:flex;align-items:flex-end"><button type="button" id="prefillLastBtn" class="btn neutral">Usar último RDO</button></div>
-          </div>
-          <div class="grid grid-3">
-            <div class="field"><label>Clima (manhã)</label><input id="weather_morning"></div>
-            <div class="field"><label>Clima (tarde)</label><input id="weather_afternoon"></div>
-            <div class="field"><label>Clima (noite)</label><input id="weather_night"></div>
-          </div>
-          <button type="button" id="fetchWeatherBtn" class="btn">Buscar clima automático</button>
-          <div id="weatherPreview"></div>
-
-          <h3>Efetivo e Prazos</h3>
-          <div class="grid grid-3">
-            <div class="field"><label>Efetivo diurno</label><input id="day_eff" type="number" value="0"></div>
-            <div class="field"><label>Efetivo noturno</label><input id="night_eff" type="number" value="0"></div>
-            <div class="field"><label>Prazo Contratual</label><input id="prazo_contratual" type="number"></div>
-            <div class="field"><label>Dias Decorridos</label><input id="dias_decorridos" type="number"></div>
-            <div class="field"><label>Prorrogação</label><input id="prorrogacao" type="number" value="0"></div>
-            <div class="field"><label>Dias Restantes</label><input id="dias_restantes" type="number"></div>
-          </div>
-
-          <h3>Colaboradores / Horas</h3>
-          <div class="grid">
-            <div class="row" style="flex-wrap:wrap">
-              <select id="collabSel"></select>
-              <button type="button" id="addCollabEntry" class="btn">Adicionar colaborador</button>
-              <button type="button" id="nfcBtn" class="btn neutral">Ler crachá (NFC)</button>
-              <span class="muted" id="nfcHint">Android + Chrome, conexão HTTPS</span>
-            </div>
-            <div class="table-wrap">
-              <table id="collabTable">
-                <thead><tr><th>Colaborador</th><th>Equipe</th><th>Atividade</th><th>Horas</th><th>Turno</th><th>Status</th><th>Obs.</th><th></th></tr></thead>
-                <tbody></tbody>
-              </table>
-            </div>
-          </div>
-
-          <h3>Equipamentos</h3>
-          <div class="grid">
-            <div class="row" style="flex-wrap:wrap">
-              <select id="equipSel"></select>
-              <button type="button" id="addEquipEntry" class="btn">Adicionar equipamento</button>
-            </div>
-            <div class="table-wrap">
-              <table id="equipTable">
-                <thead><tr><th>Equipamento</th><th>Medidor inicial</th><th>Medidor final</th><th>Horas</th><th>Operador</th><th></th></tr></thead>
-                <tbody></tbody>
-              </table>
-            </div>
-          </div>
-
-          <h3>Ocorrências</h3>
-          <div class="grid">
-            <button type="button" id="addOccEntry" class="btn">Adicionar ocorrência</button>
-            <div class="table-wrap">
-              <table id="occTable">
-                <thead><tr><th>Categoria</th><th>Descrição</th><th>Atividade</th><th>Equipe</th><th>Horas perdidas</th><th>Início</th><th>Fim</th><th>Sev.</th><th></th></tr></thead>
-                <tbody></tbody>
-              </table>
-            </div>
-          </div>
-
-          <h3>Anexos</h3>
-          <div class="grid">
-            <div class="row" style="flex-wrap:wrap"><input id="fileInput" type="file" multiple accept="image/*,video/*"><button type="button" id="uploadBtn" class="btn">Upload</button></div>
-            <div id="gallery" class="gallery"></div>
-          </div>
-
-          <h3>Assinaturas</h3>
-          <div class="grid grid-2">
-            <div class="card"><strong>Responsável</strong> <div class="row"><button type="button" class="btn" onclick="openSignModal('responsavel')">Assinar</button><img id="sign_responsavel_preview" style="max-width:220px;max-height:80px"></div></div>
-            <div class="card"><strong>Cliente/Fiscal</strong> <div class="row"><button type="button" class="btn" onclick="openSignModal('cliente')">Assinar</button><img id="sign_cliente_preview" style="max-width:220px;max-height:80px"></div></div>
-          </div>
-
-          <div class="row" style="flex-wrap:wrap"><button class="btn">Salvar</button><button type="button" id="genPdfBtn" class="btn secondary">Gerar PDF</button></div>
+    <section id="tab-auth" class="card">
+      <h2>Autenticação</h2>
+      <div class="grid cols-2">
+        <form id="formSignIn" class="card">
+          <h3>Entrar</h3>
+          <label>E-mail</label><input id="inEmail" type="email" required>
+          <label>Senha</label><input id="inPass" type="password" required>
+          <div class="actions"><button class="btn primary">Entrar</button></div>
+          <div class="hint">Use um e-mail de teste no ambiente dev.</div>
+        </form>
+        <form id="formSignUp" class="card">
+          <h3>Criar conta</h3>
+          <label>Nome</label><input id="upNome" required>
+          <label>E-mail</label><input id="upEmail" type="email" required>
+          <label>Telefone</label><input id="upTel" type="tel">
+          <label>Senha</label><input id="upPass" type="password" required>
+          <div class="actions"><button class="btn secondary">Cadastrar</button></div>
         </form>
       </div>
     </section>
 
-    <section id="page-masters" class="page hidden">
-      <div class="card">
-        <h2>Cadastros</h2>
-        <div class="row" style="flex-wrap:wrap">
-          <a class="btn" href="#/cadastros/obras">Obras</a>
-          <a class="btn" href="#/cadastros/contratadas">Contratadas</a>
-          <a class="btn" href="#/cadastros/atividades">Atividades</a>
-          <a class="btn" href="#/cadastros/colaboradores">Colaboradores</a>
-          <a class="btn" href="#/cadastros/equipes">Equipes</a>
-          <a class="btn" href="#/cadastros/equipamentos">Equipamentos</a>
+    <section id="tab-dashboard" class="card" style="display:none">
+      <h2>Dashboard</h2>
+      <div class="row cols-4">
+        <div>
+          <label>Projeto</label>
+          <select id="filtroObra"></select>
+        </div>
+        <div>
+          <label>Data inicial</label>
+          <input id="filtroIni" type="date">
+        </div>
+        <div>
+          <label>Data final</label>
+          <input id="filtroFim" type="date">
+        </div>
+        <div class="actions" style="align-items:end">
+          <button class="btn primary" id="btnAplicarFiltros">Aplicar filtros</button>
         </div>
       </div>
-      <div id="cad-viewport"></div>
+      <div class="grid cols-2" style="margin-top:12px">
+        <canvas id="chartHH"></canvas>
+        <canvas id="chartOcorr"></canvas>
+      </div>
+      <div class="grid cols-3" style="margin-top:12px">
+        <div class="card"><h3>Efetivo Dia</h3><div id="kpiEfetivo" class="badge">—</div></div>
+        <div class="card"><h3>HH (30 dias)</h3><div id="kpiHH" class="badge">—</div></div>
+        <div class="card"><h3>Ocorrencias (30 dias)</h3><div id="kpiOcorr" class="badge">—</div></div>
+      </div>
     </section>
-  </section>
-</main>
 
-<div class="hidden" id="signModal" style="position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:50">
-  <div class="card" style="width:min(96vw,720px)">
-    <h3 id="signTitle">Assinatura</h3>
-    <canvas id="signCanvas" width="650" height="200" style="border:1px solid #e5e7eb;border-radius:12px;width:100%"></canvas>
-    <div class="row"><button class="btn" onclick="saveSignature()">Salvar</button><button class="btn neutral" onclick="clearSignature()">Limpar</button><button class="btn secondary" onclick="closeSignModal()">Fechar</button></div>
-  </div>
-</div>
+    <section id="tab-rdo" class="card" style="display:none">
+      <h2>Novo RDO</h2>
+      <div class="row cols-4">
+        <div><label>Obra</label><select id="rdoObra"></select></div>
+        <div><label>Nº RDO</label><input id="rdoNumero" placeholder="ex.: 004"/></div>
+        <div><label>Data</label><input id="rdoData" type="date" required/></div>
+        <div style="align-self:end"><span id="rdoDow" class="badge">—</span></div>
+      </div>
 
+      <div class="row cols-4" style="margin-top:8px">
+        <div><label>Hora de chegada ao campo</label><input id="horaChegada" type="time" required/></div>
+        <div>
+          <label>Teve PTS?</label>
+          <div class="actions">
+            <label class="pill"><input type="radio" name="pts" value="nao" checked/> Nao</label>
+            <label class="pill"><input type="radio" name="pts" value="sim"/> Sim</label>
+          </div>
+        </div>
+        <div><label>Numero do PTS</label><input id="ptsNumero" placeholder="se aplicavel" disabled/></div>
+        <div><label>Hora abertura PTS</label><input id="ptsAbertura" type="time" disabled/></div>
+      </div>
+      <div class="row cols-3">
+        <div><label>Hora inicio do trabalho</label><input id="horaInicioTrab" type="time" required/></div>
+        <div class="cols-2" style="grid-column: span 2"><label>Atividades do dia</label><textarea id="atividadesDia" placeholder="Descreva atividades realizadas" required></textarea></div>
+      </div>
+
+      <div class="card">
+        <h3>Condições climáticas</h3>
+        <div class="row cols-4">
+          <div>
+            <label>Manhã</label>
+            <select id="climaManha">
+              <option value="">—</option>
+              <option>Seco</option>
+              <option>Chuvas leves</option>
+              <option>Chuvas fortes</option>
+              <option>Ventos fortes</option>
+            </select>
+          </div>
+          <div>
+            <label>Tarde</label>
+            <select id="climaTarde">
+              <option value="">—</option>
+              <option>Seco</option>
+              <option>Chuvas leves</option>
+              <option>Chuvas fortes</option>
+              <option>Ventos fortes</option>
+            </select>
+          </div>
+          <div>
+            <label>Noite</label>
+            <select id="climaNoite">
+              <option value="">—</option>
+              <option>Seco</option>
+              <option>Chuvas leves</option>
+              <option>Chuvas fortes</option>
+              <option>Ventos fortes</option>
+            </select>
+          </div>
+          <div class="actions" style="align-items:end"><button id="btnClima" type="button" class="btn ghost">Preencher automaticamente (GPS)</button></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Horas por colaborador</h3>
+        <div class="row cols-4">
+          <div><label>Colaborador</label><select id="hhColab"></select></div>
+          <div><label>Atividade</label><select id="hhAtividade"></select></div>
+          <div><label>Horas (HH:MM)</label><input id="hhHoras" type="time" step="60" value="00:00"></div>
+          <div class="actions" style="align-items:end"><button id="btnAddHH" class="btn secondary" type="button">Adicionar</button></div>
+        </div>
+        <table id="tblHH" style="margin-top:8px"><thead><tr><th>Colaborador</th><th>Atividade</th><th>Horas</th><th></th></tr></thead><tbody></tbody></table>
+      </div>
+
+      <div class="grid cols-2">
+        <div class="card">
+          <h3>Ocorrencias</h3>
+          <label>Tipo</label>
+          <select id="occTipo">
+            <option value="chuva">Chuvas</option><option value="vento">Ventos</option><option value="atraso_material">Atraso de material</option>
+            <option value="falha_equip">Falha de equipamento</option><option value="energia">Falta de energia</option><option value="acidente">Acidente</option>
+            <option value="greve">Greve/Paralisacao</option><option value="raios">Raios</option><option value="retrabalho">Retrabalho</option><option value="outros">Outros</option>
+          </select>
+          <label>Descricao</label><textarea id="occDesc"></textarea>
+          <label>Colaboradores envolvidos</label><select id="occColabs" multiple></select>
+          <label>Prazo impactado (HH:MM)</label><input id="occPrazo" type="time" step="60" value="00:00">
+          <div class="actions"><button id="btnAddOcc" type="button" class="btn ghost">Adicionar</button></div>
+          <ul id="occLista" class="hint"></ul>
+        </div>
+        <div class="card">
+          <h3>Assinatura Digital</h3>
+          <canvas id="sigPad" width="400" height="180" style="border:1px dashed #ddd;border-radius:8px;background:#fff"></canvas>
+          <div class="actions"><button id="btnClearSig" type="button" class="btn ghost">Limpar</button></div>
+          <div class="hint">Assine com o mouse ou toque. A imagem sera salva no RDO.</div>
+        </div>
+      </div>
+
+      <div class="grid cols-2">
+        <div class="card">
+          <h3>Equipamentos utilizados</h3>
+          <div class="row cols-4">
+            <div><label>Equipamento</label><select id="eqEquip"></select></div>
+            <div><label>Motorista</label><select id="eqMotorista"></select></div>
+            <div><label>Horimetro/Km inicial</label><input id="eqHini" type="number" step="0.1"></div>
+            <div><label>Horimetro/Km final</label><input id="eqHfim" type="number" step="0.1"></div>
+          </div>
+          <div class="actions" style="margin-top:6px"><button id="btnAddEq" class="btn ghost" type="button">Adicionar equipamento</button></div>
+          <table id="tblEq" style="margin-top:8px"><thead><tr><th>Equipamento</th><th>Motorista</th><th>Ini</th><th>Fim</th><th></th></tr></thead><tbody></tbody></table>
+        </div>
+        <div class="card">
+          <h3>Materiais</h3>
+          <div class="row cols-4">
+            <div><label>Material</label><select id="matItem"></select></div>
+            <div><label>Acao</label><select id="matAcao"><option value="recebido">Recebido</option><option value="utilizado">Utilizado</option></select></div>
+            <div><label>Quantidade</label><input id="matQtde" type="number" step="0.01"></div>
+            <div><label>Unidade</label><input id="matUnid" placeholder="ex.: un, kg, m"></div>
+          </div>
+          <div class="actions" style="margin-top:6px"><button id="btnAddMat" class="btn ghost" type="button">Adicionar material</button></div>
+          <table id="tblMat" style="margin-top:8px"><thead><tr><th>Material</th><th>Acao</th><th>Qtde</th><th>Unid</th><th></th></tr></thead><tbody></tbody></table>
+        </div>
+      </div>
+
+      <div class="grid cols-2">
+        <div class="card">
+          <h3>Fotos</h3>
+          <label>Fotos de atividades (min 1 se houver HH)</label>
+          <input id="fotosAtv" type="file" accept="image/*" multiple>
+          <label>Fotos de ocorrencias (min 1 se houver ocorrencias)</label>
+          <input id="fotosOcc" type="file" accept="image/*" multiple>
+        </div>
+        <div class="card">
+          <h3>NFC - Vincular Colaborador</h3>
+          <div class="actions"><button id="btnNFC" type="button" class="btn ghost">Ler cracha NFC</button><span id="nfcStatus" class="badge">Aguardando...</span></div>
+          <div class="hint">Chrome/Android com Web NFC habilitado.</div>
+          <h3 style="margin-top:16px">Resumo</h3>
+          <label>Materiais / Observacoes</label><textarea id="rdoResumo"></textarea>
+        </div>
+      </div>
+
+      <div class="footerbar">
+        <button id="btnSalvarRDO" class="btn primary">Salvar RDO</button>
+      </div>
+    </section>
+
+    <section id="tab-lists" class="card" style="display:none">
+      <h2>Cadastros</h2>
+      <div class="grid cols-3">
+        <div class="card">
+          <h3>Obras</h3>
+          <label>Nome</label><input id="obraNome">
+          <label>Gestor</label><input id="obraGestor">
+          <label>Escopo</label><input id="obraEscopo">
+          <label>Nº Contrato</label><input id="obraContrato">
+          <label>Data Inicio</label><input id="obraInicio" type="date">
+          <label>Assinatura</label><input id="obraAssin" type="date">
+          <label>Previsao Conclusao</label><input id="obraPrev" type="date">
+          <label>Valor</label><input id="obraValor" type="number" step="0.01">
+          <label>Resp. Tecnico</label><input id="obraResp">
+          <label>Nº ART</label><input id="obraART">
+          <div class="actions"><button id="btnAddObra" class="btn secondary">Adicionar</button></div>
+          <div id="listaObras" class="empty">Sem obras</div>
+        </div>
+        <div class="card">
+          <h3>Colaboradores</h3>
+          <label>Nome</label><input id="colabNome">
+          <label>Funcao</label><input id="colabFuncao">
+          <label>E-mail</label><input id="colabEmail" type="email">
+          <label>Telefone</label><input id="colabTel">
+          <div class="actions"><button id="btnAddColab" class="btn secondary">Adicionar</button></div>
+          <div id="listaColabs" class="empty">Sem colaboradores</div>
+        </div>
+        <div class="card">
+          <h3>Atividades</h3>
+          <label>Obra</label><select id="ativObra"></select>
+          <label>Nome da atividade</label><input id="ativNome">
+          <label>ID do cronograma</label><input id="ativCrono">
+          <label>Prazo (dias)</label><input id="ativPrazo" type="number">
+          <div class="actions"><button id="btnAddAtiv" class="btn secondary">Adicionar</button></div>
+          <div id="listaAtivs" class="empty">Sem atividades</div>
+        </div>
+      </div>
+
+      <div class="grid cols-2" style="margin-top:16px">
+        <div class="card">
+          <h3>Equipamentos</h3>
+          <label>Nome</label><input id="eqcNome">
+          <label>Marca</label><input id="eqcMarca">
+          <label>Modelo</label><input id="eqcModelo">
+          <label>Data</label><input id="eqcData" type="date">
+          <label>Horimetro/Km</label><input id="eqcHKm" type="number" step="0.1">
+          <label>Motorista (colaborador)</label><select id="eqcMotorista"></select>
+          <div class="actions"><button id="btnAddEquip" class="btn secondary">Adicionar</button></div>
+          <div id="listaEquip" class="empty">Sem equipamentos</div>
+        </div>
+        <div class="card">
+          <h3>Materiais</h3>
+          <label>Nome</label><input id="matcNome">
+          <label>Unidade</label><input id="matcUnid" placeholder="ex.: un, kg, m">
+          <div class="actions"><button id="btnAddMatCad" class="btn secondary">Adicionar</button></div>
+          <div id="listaMatCad" class="empty">Sem materiais</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script defer src="./js/app.js"></script>
 </body>
 </html>
