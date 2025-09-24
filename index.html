@@ -1,0 +1,1943 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RDO - Fidel (v4)</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#C8102E">
+<link rel="icon" href="icons/icon-192.png">
+
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://iyizkskjjizqlcoakgrb.supabase.co" crossorigin>
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+:root{
+  --chumbo:#4D4F53; --escuro:#333F48; --vermelho:#C8102E; --egeu:#00617F;
+  --ok:#16a34a; --warn:#ea580c; --info:#0ea5e9; --muted:#6b7280; --bad:#dc2626; --violet:#7c3aed; --amber:#b45309; --gray:#9ca3af;
+  --bg:#f7f8fb; --card:#fff; --text:#1f2937;
+}
+*{box-sizing:border-box}
+html,body{max-width:100%;overflow-x:hidden;background:var(--bg)}
+body{margin:0;color:var(--text);font:500 15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial}
+
+/* Topbar */
+header.top{position:sticky;top:0;z-index:20;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 12px;background:linear-gradient(90deg,var(--escuro),var(--chumbo));color:#fff}
+header .brand{display:flex;gap:8px;align-items:center}
+header h1{font-size:18px;margin:0}
+nav a{color:#fff;text-decoration:none;border:1px solid #ffffff35;border-radius:10px;padding:8px 12px;margin-right:6px}
+nav a.active{background:#ffffff26}
+
+main{max-width:1260px;margin:16px auto;padding:0 14px}
+.card{background:var(--card);border:1px solid #e5e7eb;border-radius:14px;padding:14px;margin-bottom:14px;box-shadow:0 1px 2px #0001}
+h2{margin:0 0 10px;font-size:18px;color:#111827}
+h3{margin:0 0 6px;font-size:16px;color:#111827}
+label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
+input,select,textarea{width:100%;padding:9px;border:1px solid #e5e7eb;border-radius:10px;background:#fff}
+textarea{min-height:76px}
+.btn{border:0;border-radius:999px;padding:9px 14px;cursor:pointer}
+.btn.primary{background:var(--vermelho);color:#fff}
+.btn.ghost{background:#0000000a;color:#111827}
+.btn.sec{background:var(--egeu);color:#fff}
+.badge{padding:4px 8px;border-radius:999px;background:#00000012;color:#374151;font-size:12px}
+.kpi{display:flex;align-items:center;gap:8px;padding:10px;border:1px solid #eee;border-radius:12px;background:#fff}
+
+.grid{display:grid;gap:12px}
+.g2{grid-template-columns:1fr 1fr}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:1000px){.g2,.g3,.g4{grid-template-columns:1fr}}
+
+table{width:100%;border-collapse:collapse}
+th,td{padding:9px;border-bottom:1px solid #eee;text-align:left;vertical-align:top}
+tbody tr:hover{background:#fafafa}
+
+#toast{position:fixed;right:14px;top:14px;z-index:50;background:#111827;color:#fff;padding:10px 14px;border-radius:10px;display:none}
+
+/* Collapsibles & Stepper */
+.layout{display:grid;gap:14px}
+@media(min-width:1000px){.layout{grid-template-columns:260px 1fr}}
+.step{position:sticky;top:64px;background:#fff;border:1px solid #eee;border-radius:12px;padding:10px;height:max-content}
+.step a{display:block;padding:8px 10px;border-radius:10px;color:#333F48;text-decoration:none}
+.step a.active{background:#f3f4f6;font-weight:600}
+.sec{border:1px solid #eee;border-radius:12px;background:#fff;margin-bottom:10px}
+.sec>header{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:#fafafa;border-bottom:1px solid #eee;cursor:pointer}
+.sec>header h3{margin:0}
+.sec .box{padding:12px;display:none}
+.sec.open .box{display:block}
+
+/* Chips & tabs */
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid #e5e7eb;border-radius:999px;padding:6px 10px;cursor:pointer;background:#fff}
+.chip.active{background:#e11d48;color:#fff;border-color:#e11d48}
+
+/* Searchable select */
+.ss{position:relative}
+.ss input[type=text]{padding-right:30px}
+.ss .ico{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:12px;color:#999}
+.ss .dd{position:absolute;z-index:30;left:0;right:0;max-height:240px;overflow:auto;background:#fff;border:1px solid #e5e7eb;border-radius:10px;margin-top:4px;display:none}
+.ss .dd div{padding:8px 10px;cursor:pointer}
+.ss .dd div:hover{background:#f3f4f6}
+
+/* Presenças */
+.cardL{display:grid;gap:8px;align-items:center;grid-template-columns:1.2fr 1fr 1fr 0.8fr 0.6fr;padding:10px;border:1px solid #eee;border-radius:12px;background:#fff}
+@media(max-width:999px){
+  .cardL{grid-template-columns:1fr 1fr;grid-template-areas:"n n" "s a" "h nfc"}
+  .n{grid-area:n}.s{grid-area:s}.a{grid-area:a}.h{grid-area:h}.nfc{grid-area:nfc;justify-self:end}
+}
+.status-chip{display:inline-block;padding:4px 10px;border-radius:999px;font-size:12px}
+.st-presente{background:#ecfdf5;color:#065f46}
+.st-ausente{background:#f3f4f6;color:#4b5563}
+.st-atrasado{background:#fff7ed;color:#7c2d12}
+.st-emprestado{background:#eef2ff;color:#3730a3}
+.st-transferido{background:#f5f3ff;color:#5b21b6}
+.st-demitido{background:#fef2f2;color:#7f1d1d}
+.st-ferias{background:#eff6ff;color:#1e40af}
+.st-afastado{background:#fffbeb;color:#92400e}
+
+/* Face capture */
+video, canvas{max-width:100%}
+.camBtns .btn{margin-right:6px}
+
+/* Charts */
+canvas{width:100% !important;height:280px !important}
+.chart-wrap{position:relative}
+.chart-wrap .empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:14px}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#C8102E"/><path d="M6 13l3 3 9-9" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <h1>RDO - Fidel</h1>
+  </div>
+  <nav id="nav">
+    <a data-tab="#tab-auth" class="active">Login</a>
+    <a data-tab="#tab-dashboard">Dashboard</a>
+    <a data-tab="#tab-rdos">RDOs</a>
+    <a data-tab="#tab-rdo">Novo RDO</a>
+    <a data-tab="#tab-cad">Cadastros</a>
+  </nav>
+</header>
+
+<main>
+  <div id="toast"></div>
+
+  <!-- AUTH -->
+  <section id="tab-auth" class="card">
+    <h2>Autenticação</h2>
+    <div class="grid g2">
+      <form id="formSignIn" class="card">
+        <h3>Entrar</h3>
+        <label>E-mail</label><input id="inEmail" type="email" required>
+        <label>Senha</label><input id="inPass" type="password" required>
+        <div class="grid"><button class="btn primary">Entrar</button></div>
+      </form>
+      <form id="formSignUp" class="card">
+        <h3>Criar conta</h3>
+        <label>Nome</label><input id="upNome" required>
+        <label>E-mail</label><input id="upEmail" type="email" required>
+        <label>Telefone</label><input id="upTel" type="tel">
+        <label>Senha</label><input id="upPass" type="password" required>
+        <div class="grid"><button class="btn sec">Cadastrar</button></div>
+      </form>
+    </div>
+  </section>
+
+  <!-- DASHBOARD -->
+  <section id="tab-dashboard" class="card" style="display:none">
+    <h2>Dashboard</h2>
+    <div class="grid g4">
+      <div><label>Obra</label><select id="filtroObra"></select></div>
+      <div><label>Encarregado</label><select id="filtroEnc"></select></div>
+      <div><label>De</label><input id="filtroIni" type="date"></div>
+      <div><label>Até</label><input id="filtroFim" type="date"></div>
+    </div>
+    <div class="grid" style="margin-top:8px">
+      <div class="chips" id="dashTabs">
+        <span class="chip active" data-t="prod">Produtividade</span>
+        <span class="chip" data-t="ocor">Ocorrências</span>
+        <span class="chip" data-t="pessoal">Pessoal</span>
+        <span class="chip" data-t="recursos">Recursos</span>
+        <span class="chip" data-t="avan">Avançado</span>
+      </div>
+      <div class="grid" style="justify-content:end"><button id="btnAplicarFiltros" class="btn primary">Aplicar filtros</button></div>
+    </div>
+
+    <div id="grp-prod" class="grid g2" style="margin-top:10px">
+      <div class="chart-wrap"><canvas id="chHHporDia"></canvas><div class="empty" hidden>Sem dados</div></div>
+      <div class="chart-wrap"><canvas id="chHHcumul"></canvas><div class="empty" hidden>Sem dados</div></div>
+      <div class="chart-wrap"><canvas id="chHHporAtividade"></canvas><div class="empty" hidden>Sem dados</div></div>
+      <div class="chart-wrap"><canvas id="chTopColab"></canvas><div class="empty" hidden>Sem dados</div></div>
+      <div class="chart-wrap"><canvas id="chHHporObra"></canvas><div class="empty" hidden>Sem dados</div></div>
+      <div class="chart-wrap"><canvas id="chTopEnc"></canvas><div class="empty" hidden>Sem dados</div></div>
+    </div>
+
+    <div id="grp-ocor" class="grid g2" style="display:none;margin-top:10px">
+      <div class="chart-wrap"><canvas id="chOcorrTipo"></canvas><div class="empty" hidden>Sem dados</div></div>
+      <div class="chart-wrap"><canvas id="chOcorrPolar"></canvas><div class="empty" hidden>Sem dados</div></div>
+      <div class="chart-wrap"><canvas id="chOcorrDia"></canvas><div class="empty" hidden>Sem dados</div></div>
+      <div class="chart-wrap"><canvas id="chHorasPerdidas"></canvas><div class="empty" hidden>Sem dados</div></div>
+      <div class="chart-wrap"><canvas id="chOcoObra"></canvas><div class="empty" hidden>Sem dados</div></div>
+    </div>
+
+    <div id="grp-pessoal" class="grid g2" style="display:none;margin-top:10px">
+      <div class="chart-wrap"><canvas id="chStatusColab"></canvas><div class="empty" hidden>Sem dados</div></div>
+      <div class="chart-wrap"><canvas id="chStatusRadar"></canvas><div class="empty" hidden>Sem dados</div></div>
+      <div class="chart-wrap"><canvas id="chPresencaEnc"></canvas><div class="empty" hidden>Sem dados</div></div>
+      <div class="chart-wrap"><canvas id="chAbsenteismo"></canvas><div class="empty" hidden>Sem dados</div></div>
+    </div>
+
+    <div id="grp-recursos" class="grid g2" style="display:none;margin-top:10px">
+      <div class="chart-wrap"><canvas id="chEquip"></canvas><div class="empty" hidden>Sem dados</div></div>
+      <div class="chart-wrap"><canvas id="chMateriais"></canvas><div class="empty" hidden>Sem dados</div></div>
+      <div class="chart-wrap"><canvas id="chMateriaisRec"></canvas><div class="empty" hidden>Sem dados</div></div>
+    </div>
+
+    <div id="grp-avan" class="grid g2" style="display:none;margin-top:10px">
+      <div class="chart-wrap"><canvas id="chHHvsOcorr"></canvas><div class="empty" hidden>Sem dados</div></div>
+    </div>
+
+    <div class="grid g3" style="margin-top:10px">
+      <div class="kpi"><b>Efetivo Hoje:</b>&nbsp;<span id="kpiEfetivo">—</span></div>
+      <div class="kpi"><b>HH 30d:</b>&nbsp;<span id="kpiHH">—</span></div>
+      <div class="kpi"><b>Ocorrências 30d:</b>&nbsp;<span id="kpiOcorr">—</span></div>
+    </div>
+  </section>
+
+  <!-- LISTA DE RDOs -->
+  <section id="tab-rdos" class="card" style="display:none">
+    <h2>RDOs</h2>
+    <div class="grid g4">
+      <div><label>Obra</label><select id="rdoListObra"></select></div>
+      <div><label>De</label><input id="rdoListIni" type="date"></div>
+      <div><label>Até</label><input id="rdoListFim" type="date"></div>
+      <div class="grid" style="align-content:end"><button id="btnRdoList" class="btn primary">Filtrar</button></div>
+    </div>
+    <div class="grid g3" style="margin-top:8px">
+      <div><label>Pesquisar (nº, encarregado, ocorrência, colaborador)</label><input id="qRdo"></div>
+      <div><label>Encarregado</label><select id="rdoEncList"></select></div>
+      <div class="grid" style="align-content:end;justify-items:end"><button id="btnNovoRDO" class="btn sec" type="button">Novo RDO</button></div>
+    </div>
+    <table style="margin-top:10px">
+      <thead><tr><th style="width:110px">Nº</th><th style="width:110px">Data</th><th>Obra</th><th>Encarregado</th><th>HH</th><th>Ocorrências</th><th style="width:160px"></th></tr></thead>
+      <tbody id="tblRdos"></tbody>
+    </table>
+    <div class="badge">Duplo clique abre o RDO; coluna “⋯” permite imprimir e excluir.</div>
+  </section>
+
+  <!-- NOVO RDO -->
+  <section id="tab-rdo" class="card" style="display:none">
+    <h2>Novo RDO</h2>
+
+    <div class="layout">
+      <aside class="step" id="rdoSteps">
+        <a href="#sec-ident" class="active">1. Identificação</a>
+        <a href="#sec-pts">2. PTS</a>
+        <a href="#sec-clima">3. Clima</a>
+        <a href="#sec-pres">4. Presenças</a>
+        <a href="#sec-atv">5. Atividades</a>
+        <a href="#sec-ocor">6. Ocorrências</a>
+        <a href="#sec-eq">7. Equipamentos</a>
+        <a href="#sec-mat">8. Materiais</a>
+        <a href="#sec-obs">9. Observações</a>
+        <a href="#sec-resumo">10. Resumo</a>
+      </aside>
+
+      <div>
+
+        <!-- Identificação -->
+        <div class="sec open" id="sec-ident">
+          <header><h3>Identificação</h3><span class="badge">Obrigatório</span></header>
+          <div class="box">
+            <div class="grid g4">
+              <div><label>Obra</label><select id="rdoObra"></select></div>
+              <div><label>Nº RDO (automático)</label><input id="rdoNumero" readonly placeholder="00000001"></div>
+              <div><label>Data</label><input id="rdoData" type="date" required></div>
+              <div style="align-self:end"><span id="rdoDow" class="badge">—</span></div>
+            </div>
+            <div class="grid g4" style="margin-top:8px">
+              <div><label>Hora de chegada ao campo</label><input id="horaChegada" type="time" required></div>
+              <div><label>Hora início do trabalho</label><input id="horaInicioTrab" type="time" required value="08:00"></div>
+              <div><label>Supervisor/Gerente</label><select id="supSelect"></select></div>
+              <div><label>Encarregado</label><select id="encIdent"></select></div>
+            </div>
+            <div class="grid g3" style="margin-top:8px">
+              <div class="g2"><label>Localização (manual)</label><input id="localManual" placeholder="Ex.: Setor 3, Pátio Norte"></div>
+              <div><label>Capturar localização</label><button id="btnGeo" type="button" class="btn ghost">Usar GPS</button></div>
+              <div style="align-self:end"><span id="geoBadge" class="badge">GPS: —</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PTS -->
+        <div class="sec" id="sec-pts">
+          <header><h3>Permissão de Trabalho Seguro (PTS)</h3></header>
+          <div class="box">
+            <div class="chips" id="chipsPts">
+              <span class="chip" data-v="nao">Não</span>
+              <span class="chip" data-v="sim">Sim</span>
+            </div>
+            <div id="ptsWrap" style="display:none;margin-top:10px">
+              <div class="grid g4">
+                <div><label>Nº PTS</label><input id="ptsNumero"></div>
+                <div><label>Hora de abertura</label><input id="ptsAbertura" type="time"></div>
+                <div class="g2"><label>Descrição da atividade da PTS</label><textarea id="ptsDesc"></textarea></div>
+                <div><label>Foto(s) da PTS</label><input id="ptsFoto" type="file" accept="image/*" multiple></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Clima -->
+        <div class="sec" id="sec-clima">
+          <header><h3>Condições Climáticas</h3><span class="badge">Campos manuais + cartões automáticos (fontes citadas)</span></header>
+          <div class="box">
+            <div class="grid g3">
+              <div><label>Manhã</label><select id="climaManha"><option value="">—</option><option>Bom</option><option>Chuvas leves</option><option>Chuvas fortes</option><option>Ventos fortes</option></select></div>
+              <div><label>Tarde</label><select id="climaTarde"><option value="">—</option><option>Bom</option><option>Chuvas leves</option><option>Chuvas fortes</option><option>Ventos fortes</option></select></div>
+              <div><label>Noite</label><select id="climaNoite"><option value="">—</option><option>Bom</option><option>Chuvas leves</option><option>Chuvas fortes</option><option>Ventos fortes</option></select></div>
+            </div>
+            <div class="grid" style="margin-top:8px"><button id="btnClima" class="btn ghost" type="button">Buscar automático (INMET → Open‑Meteo)</button></div>
+            <div id="climaCards" class="grid g3" style="margin-top:8px"></div>
+          </div>
+        </div>
+
+        <!-- Presenças -->
+        <div class="sec" id="sec-pres">
+          <header><h3>Presenças</h3></header>
+          <div class="box">
+            <!-- Status único da equipe -->
+            <div class="card">
+              <h3>Status da equipe do encarregado</h3>
+              <div class="grid g3" style="margin-bottom:8px">
+                <div><label>Encarregado (da Identificação)</label><select id="encFromIdent" disabled></select></div>
+                <div><label>Adicionar colaborador extra</label><select id="extraColab"></select></div>
+                <div class="grid" style="align-content:end"><button id="btnAddExtra" class="btn ghost" type="button">Adicionar à equipe</button></div>
+              </div>
+              <div id="listaEquipe"></div>
+            </div>
+
+            <!-- Confirmação de Presença -->
+            <div class="card">
+              <div style="display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap">
+                <h3>Confirmação de Presença</h3>
+                <div class="chips" id="confPer">
+                  <span class="chip active" data-per="ini">Início</span>
+                  <span class="chip" data-per="almoco_s">Saída Almoço</span>
+                  <span class="chip" data-per="almoco_v">Volta Almoço</span>
+                  <span class="chip" data-per="fim">Saída</span>
+                </div>
+              </div>
+              <div class="grid g3" style="margin:6px 0 10px">
+                <div class="grid"><button class="btn ghost" id="btnNFCConf">NFC: iniciar leitura</button><span class="badge" id="nfcConfStatus">NFC desligado</span></div>
+                <div><label>Confirmar por Face (selecionar colaborador)</label><select id="faceSel_conf"></select></div>
+                <div class="grid" style="align-content:end;justify-items:end"><button class="btn ghost" id="btnFaceStart_conf">Abrir câmera</button></div>
+              </div>
+              <div class="grid g2" style="margin-top:6px">
+                <div>
+                  <table><thead><tr><th>Colaborador</th><th>Status</th><th>Hora</th><th></th></tr></thead><tbody id="tblConfirma"></tbody></table>
+                </div>
+                <div>
+                  <video id="faceVideo_conf" autoplay playsinline style="display:none"></video>
+                  <canvas id="faceCanvas_conf" width="480" height="360" style="display:none"></canvas>
+                  <div class="camBtns" style="margin-top:6px">
+                    <button class="btn ghost" id="btnFaceCap_conf" disabled>Capturar</button>
+                    <button class="btn sec" id="btnFaceSave_conf" disabled>Confirmar por Face</button>
+                    <button class="btn ghost" id="btnFaceClose_conf" disabled>Fechar câmera</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Atividades -->
+        <div class="sec" id="sec-atv">
+          <header><h3>Atividades do dia</h3></header>
+          <div class="box">
+            <div class="grid g4">
+              <div><label>Disciplina</label><select id="disciplinaSelect"></select></div>
+              <div><label>Atividade</label><select id="atvSelectDyn"></select></div>
+              <div><label>Complemento</label><input id="atvComplemento" placeholder="Complemento/descrição adicional"></div>
+              <div class="grid"><button id="btnAddAtv" type="button" class="btn sec">Adicionar atividade</button></div>
+            </div>
+            <div id="wrapAtividades" class="grid" style="margin-top:10px"></div>
+          </div>
+        </div>
+
+        <!-- Ocorrências -->
+        <div class="sec" id="sec-ocor">
+          <header><h3>Ocorrência / Interferência / Paralisações</h3></header>
+          <div class="box">
+            <div class="grid g4">
+              <div><label>Tipo</label>
+                <select id="occTipo">
+                  <option value="servicos_fora_de_escopo">Serviços fora de escopo</option>
+                  <option value="atraso_pts">Atraso de PTS</option>
+                  <option value="nao_liberacao_area">Não liberação da área pelo cliente</option>
+                  <option value="bloqueio_desbloqueio">Aguardando Bloqueio/Desbloqueio</option>
+                  <option value="chuva">Chuvas</option><option value="vento">Ventos</option><option value="atraso_material">Atraso de material</option>
+                  <option value="falha_equip">Falha de equipamento</option><option value="energia">Falta de energia</option><option value="acidente">Acidente</option>
+                  <option value="greve">Greve/Paralisação</option><option value="raios">Raios</option><option value="outros">Outros</option>
+                </select>
+              </div>
+              <div><label>Início</label><input id="occIni" type="time" value="08:00"></div>
+              <div><label>Término</label><input id="occFim" type="time" value="17:00"></div>
+              <div><label>Foto(s)</label><input id="occFoto" type="file" accept="image/*" multiple></div>
+              <div class="g2"><label>Descrição</label><textarea id="occDesc"></textarea></div>
+            </div>
+            <div class="grid g3" style="margin-top:8px">
+              <div><label>Aplicar impactação (HH) a todos</label><input id="occAll" type="time" value="01:00"></div>
+              <div class="grid" style="align-content:end"><button id="btnOccAll" type="button" class="btn ghost">Aplicar</button></div>
+            </div>
+            <div id="occDistrib" style="margin-top:8px">
+              <table><thead><tr><th>Colaborador presente</th><th>Impacto (HH:MM)</th></tr></thead><tbody id="occTBody"></tbody></table>
+            </div>
+            <div class="grid"><button id="btnAddOcc" type="button" class="btn sec">Adicionar ocorrência</button></div>
+            <ul id="occLista" class="badge"></ul>
+          </div>
+        </div>
+
+        <!-- Equipamentos -->
+        <div class="sec" id="sec-eq">
+          <header><h3>Equipamentos</h3></header>
+          <div class="box">
+            <div class="grid g4">
+              <div><label>Equipamento</label><select id="eqEquip"></select></div>
+              <div><label>Motorista</label><select id="eqMotorista"></select></div>
+              <div><label>Horímetro/Km inicial</label><input id="eqHini" type="number" step="0.1"></div>
+              <div><label>Horímetro/Km final</label><input id="eqHfim" type="number" step="0.1"></div>
+            </div>
+            <div class="grid"><button id="btnAddEq" class="btn ghost" type="button">Adicionar</button></div>
+            <table style="margin-top:8px"><thead><tr><th>Equipamento</th><th>Operador</th><th>Ini</th><th>Fim</th><th></th></tr></thead><tbody id="tblEq"></tbody></table>
+          </div>
+        </div>
+
+        <!-- Materiais -->
+        <div class="sec" id="sec-mat">
+          <header><h3>Materiais</h3></header>
+          <div class="box">
+            <div class="grid g4">
+              <div><label>Material</label><select id="matItem"></select></div>
+              <div><label>Ação</label><select id="matAcao"><option value="recebido">Recebido</option><option value="utilizado">Utilizado</option></select></div>
+              <div><label>Quantidade</label><input id="matQtde" type="number" step="0.01"></div>
+              <div><label>Unidade</label><input id="matUnid" placeholder="un, kg, m"></div>
+            </div>
+            <div class="grid"><button id="btnAddMat" class="btn ghost" type="button">Adicionar</button></div>
+            <table style="margin-top:8px"><thead><tr><th>Material</th><th>Ação</th><th>Qtde</th><th>Unid</th><th></th></tr></thead><tbody id="tblMat"></tbody></table>
+          </div>
+        </div>
+
+        <!-- Observações -->
+        <div class="sec" id="sec-obs">
+          <header><h3>Observações gerais</h3></header>
+          <div class="box">
+            <label>Anotações</label><textarea id="rdoResumo"></textarea>
+            <label>Foto(s)</label><input id="obsFotos" type="file" accept="image/*" multiple>
+          </div>
+        </div>
+
+        <!-- Resumo -->
+        <div class="sec" id="sec-resumo">
+          <header><h3>Resumo & Salvar</h3></header>
+          <div class="box">
+            <div id="resumoBox" class="grid g3"></div>
+            <div class="grid" style="justify-content:flex-end;margin-top:8px">
+              <button id="btnImprimir" type="button" class="btn ghost">Imprimir / PDF</button>
+              <button id="btnSalvarRDO" class="btn primary">Salvar RDO</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- CADASTROS -->
+  <section id="tab-cad" class="card" style="display:none">
+    <h2>Cadastros</h2>
+    <div class="grid g4">
+      <div><button class="btn ghost cad-btn active" data-cad="#cad-obras">Obras</button></div>
+      <div><button class="btn ghost cad-btn" data-cad="#cad-colab">Colaboradores</button></div>
+      <div><button class="btn ghost cad-btn" data-cad="#cad-ativ">Atividades</button></div>
+      <div><button class="btn ghost cad-btn" data-cad="#cad-eq">Equipamentos</button></div>
+      <div><button class="btn ghost cad-btn" data-cad="#cad-mat">Materiais</button></div>
+    </div>
+
+    <!-- Obras -->
+    <div id="cad-obras" class="card">
+      <div class="grid g3">
+        <div><label>Pesquisar</label><input id="qObras" placeholder="nome, gestor"></div>
+        <div class="grid"><button id="btnNewObra" class="btn sec" type="button">Nova Obra</button></div>
+      </div>
+      <div id="formObra" class="card" style="display:none">
+        <div class="grid g4">
+          <div><label>Nome</label><input id="obraNome"></div>
+          <div><label>Gestor</label><input id="obraGestor"></div>
+          <div><label>Escopo</label><input id="obraEscopo"></div>
+          <div><label>Nº Contrato</label><input id="obraContrato"></div>
+          <div><label>Data Início</label><input id="obraInicio" type="date"></div>
+          <div><label>Assinatura</label><input id="obraAssin" type="date"></div>
+          <div><label>Previsão Conclusão</label><input id="obraPrev" type="date"></div>
+          <div><label>Valor</label><input id="obraValor" type="number" step="0.01"></div>
+          <div><label>Resp. Técnico</label><input id="obraResp"></div>
+          <div><label>Nº ART</label><input id="obraART"></div>
+        </div>
+        <div class="grid"><button id="btnAddObra" class="btn primary">Salvar</button></div>
+      </div>
+      <table><thead><tr><th>Nome</th><th>Gestor</th><th>Escopo</th><th></th></tr></thead><tbody id="listaObras"></tbody></table>
+      <div class="badge">Duplo clique para editar.</div>
+    </div>
+
+    <!-- Colaboradores -->
+    <div id="cad-colab" class="card" style="display:none">
+      <div class="grid g3">
+        <div><label>Pesquisar</label><input id="qColab" placeholder="nome, matrícula, função"></div>
+        <div class="grid"><button id="btnNewColab" class="btn sec" type="button">Novo Colaborador</button></div>
+      </div>
+      <div id="formColab" class="card" style="display:none">
+        <div class="grid g4">
+          <div><label>Matrícula</label><input id="colMatricula"></div>
+          <div><label>Nome</label><input id="colabNome"></div>
+          <div><label>Função</label><input id="colabFuncao"></div>
+          <div><label>Local</label><input id="colabLocal"></div>
+          <div><label>Encarregado</label><select id="colabEncarregado"></select></div>
+          <div><label>Situação</label><select id="colabSituacao"><option value="ativo">Ativo</option><option value="afastado">Afastado</option><option value="demitido">Demitido</option></select></div>
+          <div><label>Tipo</label><select id="colabTipo"><option>mao de obra direta</option><option>mao de obra indireta</option><option>mao de obra de apoio</option><option>mao de obra especial</option></select></div>
+          <div><label>Telefone</label><input id="colabTel"></div>
+          <div><label>E-mail</label><input id="colabEmail" type="email"></div>
+          <div><label>Admissão</label><input id="colabAdmissao" type="date"></div>
+          <div><label>NFC (crachá)</label>
+            <div class="grid g2">
+              <input id="colabNFC" placeholder="tag">
+              <button class="btn ghost" id="btnColLerNFC" type="button">Ler NFC</button>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:8px">
+          <h3>Biometria (Face)</h3>
+          <div class="grid g4">
+            <div class="grid" style="align-content:end"><button class="btn ghost" id="btnColFaceOpen" type="button">Abrir câmera</button></div>
+            <div class="grid" style="align-content:end"><button class="btn ghost" id="btnColFaceCap" type="button" disabled>Capturar</button></div>
+            <div class="grid" style="align-content:end"><button class="btn sec" id="btnColFaceSave" type="button" disabled>Salvar face</button></div>
+            <div class="grid" style="align-content:end"><button class="btn ghost" id="btnColFaceClose" type="button" disabled>Fechar</button></div>
+          </div>
+          <div class="grid g2">
+            <div>
+              <video id="colFaceVideo" autoplay playsinline style="display:none"></video>
+              <canvas id="colFaceCanvas" width="480" height="360" style="display:none"></canvas>
+            </div>
+            <div>
+              <img id="colFacePreview" alt="Face cadastrada" style="max-width:100%;border-radius:12px;display:none">
+              <div id="colFaceInfo" class="badge">Nenhuma face cadastrada.</div>
+            </div>
+          </div>
+        </div>
+        <div class="grid"><button id="btnAddColab" class="btn primary">Salvar</button></div>
+      </div>
+      <table><thead><tr><th>Matrícula</th><th>Nome</th><th>Função</th><th>Local</th><th>Encarregado</th><th>Situação</th><th>Tipo</th><th>NFC</th><th>Face</th><th></th></tr></thead><tbody id="listaColabs"></tbody></table>
+      <div class="badge">Duplo clique para editar.</div>
+    </div>
+
+    <!-- Atividades -->
+    <div id="cad-ativ" class="card" style="display:none">
+      <div class="grid g3">
+        <div><label>Pesquisar</label><input id="qAtiv" placeholder="nome"></div>
+        <div class="grid"><button id="btnNewAtiv" class="btn sec" type="button">Nova Atividade</button></div>
+      </div>
+      <div id="formAtiv" class="card" style="display:none">
+        <div class="grid g4">
+          <div><label>Obra</label><select id="ativObra"></select></div>
+          <div><label>Nome</label><input id="ativNome"></div>
+          <div><label>ID Cronograma</label><input id="ativCrono"></div>
+          <div><label>Prazo (dias)</label><input id="ativPrazo" type="number"></div>
+        </div>
+        <div class="grid"><button id="btnAddAtiv" class="btn primary">Salvar</button></div>
+      </div>
+      <table><thead><tr><th>Atividade</th><th>Obra</th><th>Crono</th><th>Prazo</th><th></th></tr></thead><tbody id="listaAtivs"></tbody></table>
+      <div class="badge">Duplo clique para editar.</div>
+    </div>
+
+    <!-- Equipamentos -->
+    <div id="cad-eq" class="card" style="display:none">
+      <div class="grid g3">
+        <div><label>Pesquisar</label><input id="qEquip" placeholder="nome/modelo"></div>
+        <div class="grid"><button id="btnNewEquip" class="btn sec" type="button">Novo Equipamento</button></div>
+      </div>
+      <div id="formEquip" class="card" style="display:none">
+        <div class="grid g4">
+          <div><label>Nome</label><input id="eqcNome"></div>
+          <div><label>Marca</label><input id="eqcMarca"></div>
+          <div><label>Modelo</label><input id="eqcModelo"></div>
+          <div><label>Data</label><input id="eqcData" type="date"></div>
+          <div><label>Horímetro/Km</label><input id="eqcHKm" type="number" step="0.1"></div>
+          <div><label>Motorista</label><select id="eqcMotorista"></select></div>
+        </div>
+        <div class="grid"><button id="btnAddEquip" class="btn primary">Salvar</button></div>
+      </div>
+      <table><thead><tr><th>Nome</th><th>Marca</th><th>Modelo</th><th>Motorista</th><th></th></tr></thead><tbody id="listaEquip"></tbody></table>
+      <div class="badge">Duplo clique para editar.</div>
+    </div>
+
+    <!-- Materiais -->
+    <div id="cad-mat" class="card" style="display:none">
+      <div class="grid g3">
+        <div><label>Pesquisar</label><input id="qMat" placeholder="nome, unidade"></div>
+        <div class="grid"><button id="btnNewMat" class="btn sec" type="button">Novo Material</button></div>
+      </div>
+      <div id="formMat" class="card" style="display:none">
+        <div class="grid g4">
+          <div><label>Nome</label><input id="matcNome"></div>
+          <div><label>Unidade</label><input id="matcUnid" placeholder="un, kg, m"></div>
+        </div>
+        <div class="grid"><button id="btnAddMatSave" class="btn primary">Salvar</button></div>
+      </div>
+      <table><thead><tr><th>Nome</th><th>Unidade</th><th></th></tr></thead><tbody id="listaMat"></tbody></table>
+      <div class="badge">Duplo clique para editar.</div>
+    </div>
+
+  </section>
+</main>
+
+<script>
+/* ===== Helpers ===== */
+const gid = id => document.getElementById(id);
+const today = () => { const d=new Date(); const y=d.getFullYear(); const m=String(d.getMonth()+1).padStart(2,"0"); const dd=String(d.getDate()).padStart(2,"0"); return y+"-"+m+"-"+dd; };
+const toast = m => { const t = gid("toast"); t.textContent = m; t.style.display = "block"; setTimeout(()=>t.style.display="none",2400) };
+const toHours = t => { if(!t) return 0; const [h,m] = String(t).split(":").map(Number); return (h||0)+((m||0)/60) };
+const hdiff = (ini,fim)=> toHours(fim)-toHours(ini);
+const fmt1 = v => (Math.round((v||0)*10)/10).toString();
+const pad8 = n => String(n).padStart(8,"0");
+function slug(s){ return (s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"") || "item" }
+function ext(n){ const p=n.split("."); return (p.length>1?p.pop():"jpg").toLowerCase() }
+
+/* Collapsibles */
+document.addEventListener("click",(e)=>{
+  if(e.target.closest(".sec>header")){
+    const sec = e.target.closest(".sec");
+    sec.classList.toggle("open");
+  }
+});
+
+/* Searchable select */
+function makeSearchableSelect(sel){
+  if(!sel || sel.dataset.ss==="1") return;
+  sel.dataset.ss = "1";
+  const wrap = document.createElement("div"); wrap.className = "ss";
+  const inp = document.createElement("input"); inp.type = "text"; inp.placeholder = "Pesquisar...";
+  const ico = document.createElement("span"); ico.className = "ico"; ico.textContent = "⌄";
+  const dd = document.createElement("div"); dd.className = "dd";
+  const hidden = sel; hidden.style.display = "none";
+  sel.parentNode.insertBefore(wrap, hidden);
+  wrap.appendChild(inp); wrap.appendChild(ico); wrap.appendChild(dd); wrap.appendChild(hidden);
+  function build(filter){
+    dd.innerHTML = "";
+    const f = (filter||"").trim().toLowerCase();
+    Array.from(hidden.options).forEach(o=>{
+      const tags = (o.getAttribute("data-tags")||"").toLowerCase();
+      const txt = (o.text||o.textContent||"").toLowerCase();
+      if(f && !(txt.includes(f) || tags.includes(f))) return;
+      const d = document.createElement("div"); d.textContent = o.text; d.dataset.val = o.value; dd.appendChild(d);
+    });
+    dd.style.display = "block";
+  }
+  inp.addEventListener("focus",()=>build(inp.value));
+  inp.addEventListener("input",()=>build(inp.value));
+  inp.addEventListener("blur",()=>setTimeout(()=>dd.style.display="none",120));
+  dd.addEventListener("mousedown",e=>{
+    const it = e.target.closest("div"); if(!it) return;
+    hidden.value = it.dataset.val; inp.value = it.textContent; dd.style.display = "none";
+    hidden.dispatchEvent(new Event("change"));
+  });
+  const opt = hidden.options[hidden.selectedIndex]; if(opt){ inp.value = opt.text }
+}
+function opt(text, value, tags=""){ const o = new Option(text, value); if(tags) o.setAttribute("data-tags", tags); return o; }
+
+/* Nav */
+document.getElementById("nav").addEventListener("click",(e)=>{
+  if(!e.target.matches("a[data-tab]")) return;
+  document.querySelectorAll("header nav a").forEach(a=>a.classList.remove("active"));
+  e.target.classList.add("active");
+  document.querySelectorAll("main > section").forEach(s=>s.style.display="none");
+  const sel = e.target.dataset.tab;
+  document.querySelector(sel).style.display = "block";
+  if(sel==="#tab-dashboard") loadDashboard();
+  if(sel==="#tab-rdos") loadRdoList();
+  if(sel==="#tab-rdo") onOpenRdo();
+  if(sel==="#tab-cad") onOpenCad();
+});
+
+/* Supabase */
+const SUPABASE_URL = "https://iyizkskjjizqlcoakgrb.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml5aXprc2tqaml6cWxjb2FrZ3JiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY4NjI2NzYsImV4cCI6MjA3MjQzODY3Nn0.DJ-lFWRRtqWDNYu2NYbT-NOWaMy9jFJICBS4TsJveDA";
+let sb;
+function initSupabase(){ if(!window.supabase || !window.supabase.createClient){ console.error("Supabase SDK não carregou"); return } sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); onAuth(); }
+if(window.supabase && window.supabase.createClient) initSupabase(); else window.addEventListener("load", initSupabase);
+
+/* Auth */
+document.getElementById("formSignIn").addEventListener("submit",async(e)=>{
+  e.preventDefault(); if(!sb){ return alert("Aguarde o SDK..."); }
+  const { error } = await sb.auth.signInWithPassword({ email: gid("inEmail").value, password: gid("inPass").value });
+  if(error){ alert("Erro: "+error.message); return } onAuth();
+});
+document.getElementById("formSignUp").addEventListener("submit",async(e)=>{
+  e.preventDefault(); if(!sb){ return alert("Aguarde o SDK..."); }
+  const { data, error } = await sb.auth.signUp({ email: gid("upEmail").value, password: gid("upPass").value });
+  if(error){ alert("Erro: "+error.message); return }
+  if(data.user){ await sb.from("profiles").insert({ id:data.user.id, nome:gid("upNome").value, telefone:gid("upTel").value }).catch(()=>{}); }
+  alert("Conta criada! Faça login.");
+});
+async function onAuth(){
+  if(!sb) return;
+  const { data:{ user } } = await sb.auth.getUser();
+  const ok = !!user;
+  document.querySelectorAll("main > section").forEach(s=>s.style.display="none");
+  document.querySelector(ok?"#tab-dashboard":"#tab-auth").style.display="block";
+  document.querySelectorAll("header nav a").forEach(a=>a.classList.remove("active"));
+  document.querySelector(`header nav a[data-tab='${ok?"#tab-dashboard":"#tab-auth"}']`).classList.add("active");
+  if(ok){ await loadCombos(); await loadDashboard(); await loadRdoList(); }
+}
+
+/* ===== Combos / Labels ===== */
+const DISC_ATV = {
+ "Administração": ["Gestão Documental","Custos e Prazos","Recursos Humanos","Outras"],
+ "Almoxarifado": ["Recebimento de Materiais","Armazenamento","Distribuição","Outras"],
+ "Andaime": ["Montagem","Inspeção","Desmontagem","Outras"],
+ "Automação": ["Montagem de Painéis","Instalação de CLPs","Testes Funcionais","Outras"],
+ "Civil": ["Fundação","Estrutura de Concreto","Acabamento","Outras"],
+ "Comissionamento": ["Testes Elétricos","Testes Mecânicos","Testes Funcionais","Outras"],
+ "Elétrica": ["Montagem de Leitos e Eletrocalhas","Cabeamento","Testes de Isolamento","Outras"],
+ "Estrutura Metálica": ["Fabricação","Montagem em Campo","Pintura e Acabamento","Outras"],
+ "Garantia de Qualidade": ["Inspeção Visual","Ensaios Não Destrutivos (END)","Liberação de Serviços","Outras"],
+ "Gerência": ["Coordenação Geral","Interface com Cliente","Relatórios e Controle","Outras"],
+ "Instrumentação": ["Montagem de Suportes","Instalação de Instrumentos","Calibração","Outras"],
+ "Irata": ["Acesso por Corda","Manutenção em Altura","Inspeções em Locais de Difícil Acesso","Outras"],
+ "Mecânica": ["Montagem de Equipamentos Estáticos","Montagem de Equipamentos Rotativos","Alinhamento e Testes","Outras"],
+ "Meio Ambiente": ["Gestão de Resíduos","Monitoramento Ambiental","Relatórios Ambientais","Outras"],
+ "Mobilização e Desmobilização": ["Estruturação de Canteiro","Transporte de Máquinas","Retirada de Estruturas","Outras"],
+ "Motoristas e Operadores de Máquinas": ["Operação de Veículos Leves","Operação de Máquinas Pesadas","Apoio Logístico","Outras"],
+ "Movimentação de Cargas": ["Rigging","Içamento","Transporte Interno","Outras"],
+ "Pintura": ["Preparação de Superfície","Pintura Anticorrosiva","Acabamento","Outras"],
+ "Planejamento": ["Cronogramas","Controle de Custos","Relatórios","Outras"],
+ "Produção": ["Execução de Atividades","Monitoramento de Progresso","Apoio às Frentes de Trabalho","Outras"],
+ "Segurança e Medicina do Trabalho": ["DDS","Inspeções","Treinamentos","Outras"],
+ "Tapamento e Cobertura": ["Montagem de Estruturas","Instalação de Telhas","Impermeabilização","Outras"],
+ "Telecom": ["Lançamento de Cabos","Montagem de Sistemas","Testes de Conectividade","Outras"],
+ "Topografia": ["Levantamento","Marcação de Campo","As Built","Outras"],
+ "Transportes": ["Transporte de Pessoas","Transporte de Materiais","Logística Externa","Outras"],
+ "Tubulação": ["Fabricação","Montagem em Campo","Testes Hidrostáticos","Outras"]
+};
+
+function colabLabel(c){ return `${c.matricula||""} - ${c.nome}${c.funcao? " ("+c.funcao+")":""}`.trim(); }
+function colabTags(c){ return `${c.matricula||""} ${c.nome||""} ${c.funcao||""}`.trim(); }
+
+async function loadCombos(){
+  if(!sb) return;
+  const obras = (await sb.from("obras").select("id,nome").order("nome")).data||[];
+  fillSel("filtroObra",obras,true); fillSel("rdoListObra",obras,true);
+  fillSel("rdoObra",obras,false); fillSel("ativObra",obras,true);
+
+  // Encarregados com equipe
+  let encs = (await sb.from("encarregados_com_equipe").select("id,nome").order("nome")).data;
+  if(!encs){
+    const all = (await sb.from("colaboradores").select("id,nome")).data||[];
+    const withTeam=[];
+    for(const e of all){
+      const c = await sb.from("colaboradores").select("id",{count:"exact",head:true}).eq("encarregado_id",e.id);
+      if(c.count>0) withTeam.push(e);
+    }
+    encs = withTeam;
+  }
+  fillSel("filtroEnc",encs,true);
+  fillSel("encIdent",encs,true);
+  fillSel("rdoEncList",encs,true);
+  fillSel("colabEncarregado",encs,true);
+
+  // Colaboradores (com rótulo completo)
+  const colabs = (await sb.from("colaboradores").select("id,matricula,nome,funcao,nfc_tag").order("nome")).data||[];
+  fillSelCustom("supSelect", colabs, true);
+  fillSelCustom("extraColab", colabs, true);
+  fillSelCustom("eqMotorista", colabs, true);
+  fillSelCustom("eqcMotorista", colabs, true);
+  fillSelCustom("faceSel_conf", colabs, true);
+
+  // Atividades catálogo e Disciplinas
+  const atvs = (await sb.from("atividades").select("id,nome").order("nome")).data||[];
+  fillSel("atvSelectDyn",[{"id":"__outros__","nome":"Outras"}].concat(atvs),false);
+  fillSel("disciplinaSelect", Object.keys(DISC_ATV).map(k=>({id:k,nome:k})), false);
+
+  // Equipamentos/Materiais
+  const eqs = (await sb.from("equipamentos").select("id,nome").order("nome")).data||[];
+  fillSel("eqEquip",eqs,true);
+  const mats = (await sb.from("materiais").select("id,nome,unidade").order("nome")).data||[];
+  fillSel("matItem",mats,true);
+
+  // Make searchable
+  ["filtroObra","rdoListObra","rdoEncList","rdoObra","ativObra","filtroEnc","encIdent","eqMotorista","colabEncarregado","eqcMotorista","atvSelectDyn","eqEquip","matItem","extraColab","supSelect","disciplinaSelect","faceSel_conf"]
+    .forEach(id=>makeSearchableSelect(gid(id)));
+}
+function fillSel(id,rows,addBlank){
+  const s = gid(id); if(!s) return; const keep = s.value; s.innerHTML = "";
+  if(addBlank) s.append(new Option("(todos)",""));
+  (rows||[]).forEach(r=> s.append(opt(r.nome||r.id, r.id, r.tags||"")) );
+  if(keep) s.value = keep;
+}
+function fillSelCustom(id, colabs, addBlank){
+  const s = gid(id); if(!s) return; const keep = s.value; s.innerHTML="";
+  if(addBlank) s.append(new Option("(todos)",""));
+  (colabs||[]).forEach(c=> s.append(opt(colabLabel(c), c.id, colabTags(c))) );
+  if(keep) s.value = keep;
+}
+
+/* ===== Dashboard ===== */
+const dashGroups = ["prod","ocor","pessoal","recursos","avan"];
+document.getElementById("dashTabs").addEventListener("click",(e)=>{
+  const el = e.target.closest(".chip"); if(!el) return;
+  document.querySelectorAll("#dashTabs .chip").forEach(c=>c.classList.remove("active"));
+  el.classList.add("active");
+  dashGroups.forEach(g=> gid("grp-"+g).style.display = (el.dataset.t===g?"grid":"none"));
+});
+
+gid("btnAplicarFiltros").addEventListener("click",loadDashboard);
+function pal(n){
+  const base = ["#2563eb","#16a34a","#f59e0b","#ef4444","#7c3aed","#0ea5e9","#22c55e","#f97316","#1f2937","#a855f7","#10b981","#eab308","#dc2626","#059669","#fb7185"];
+  const arr=[]; for(let i=0;i<n;i++) arr.push(base[i%base.length]);
+  return arr;
+}
+function setEmptyState(id, labels, data){
+  const wrap = gid(id).closest(".chart-wrap"); const emp = wrap.querySelector(".empty");
+  const sum = (data||[]).reduce((a,b)=>a+(+b||0),0);
+  emp.hidden = !(labels||[]).length ? false : !(sum===0);
+}
+
+async function loadDashboard(){
+  if(!sb) return;
+  const hoje=today();
+  const ini = gid("filtroIni").value || hoje;
+  const fim = gid("filtroFim").value || hoje;
+  const obra = gid("filtroObra").value || null;
+  const enc  = gid("filtroEnc").value || null;
+
+  // Helper: obra map
+  const obras = (await sb.from("obras").select("id,nome")).data||[];
+  const obraMap = {}; obras.forEach(o=> obraMap[o.id]=o.nome);
+
+  // HH por dia
+  let qhh = sb.from("rdo_hh").select("horas, atividade_id, colaborador_id, rdo:data!inner(id, data, obra_id, encarregado_id)").gte("data",ini).lte("data",fim);
+  if(obra) qhh = qhh.eq("rdo.obra_id",obra);
+  if(enc)  qhh = qhh.eq("rdo.encarregado_id",enc);
+  const hh = (await qhh).data||[];
+  const mapHH = new Map(); hh.forEach(r=>{const d=r.rdo?.data; if(!d) return; mapHH.set(d,(mapHH.get(d)||0)+(r.horas||0))});
+  draw("chHHporDia","line","HH por dia", seriesFromMap(mapHH), { tension:0.3, borderWidth:2, pointRadius:2 });
+
+  // HH cumulativa
+  const lbls = [...mapHH.keys()].sort();
+  let run=0, cum=[]; for(const d of lbls){ run+=(mapHH.get(d)||0); cum.push(run) }
+  draw("chHHcumul","line","HH acumuladas",{labels:lbls,data:cum},{ tension:0.25, borderWidth:2, pointRadius:1 });
+
+  // Ocorrências
+  let qoc = sb.from("ocorrencias").select("id,tipo,data,obra_id,rdo_id,rdo:rdo_id(encarregado_id)").gte("data",ini).lte("data",fim);
+  if(obra) qoc = qoc.eq("obra_id",obra);
+  if(enc) qoc = qoc.eq("rdo.encarregado_id",enc);
+  const occ = (await qoc).data||[];
+  const aggTipo = {}; const mapODia=new Map();
+  occ.forEach(o=>{ aggTipo[o.tipo]=(aggTipo[o.tipo]||0)+1; const d=o.data; mapODia.set(d,(mapODia.get(d)||0)+1); });
+  draw("chOcorrTipo","doughnut","Ocorrências por tipo", seriesFromObj(aggTipo));
+  draw("chOcorrPolar","polarArea","Distribuição (polar)", seriesFromObj(aggTipo));
+  draw("chOcorrDia","bar","Ocorrências por dia", seriesFromMap(mapODia));
+
+  // Status efetivo
+  let qst = sb.from("rdo_colab_status").select("status,colaborador_id,rdo:id!inner(id,data,obra_id,encarregado_id)").gte("data",ini).lte("data",fim);
+  if(obra) qst = qst.eq("rdo.obra_id",obra);
+  if(enc)  qst = qst.eq("rdo.encarregado_id",enc);
+  const sts = (await qst).data||[];
+  const aggSt = {}; sts.forEach(s=> aggSt[s.status]=(aggSt[s.status]||0)+1);
+  draw("chStatusColab","pie","Status", seriesFromObj(aggSt));
+  const abs = Object.entries(aggSt).filter(([k])=>k!=="presente");
+  draw("chAbsenteismo","bar","Absenteísmo",{labels:abs.map(x=>x[0]),data:abs.map(x=>x[1])});
+
+  // HH por atividade
+  let qha = sb.from("rdo_hh").select("horas, atividade_id, atividades(nome), rdo:data!inner(data,obra_id,encarregado_id)").gte("data",ini).lte("data",fim);
+  if(obra) qha = qha.eq("rdo.obra_id",obra);
+  if(enc)  qha = qha.eq("rdo.encarregado_id",enc);
+  const ha = (await qha).data||[];
+  const aggAtv={}; ha.forEach(a=>{ const n=a.atividades?.nome||a.atividade_id; aggAtv[n]=(aggAtv[n]||0)+(a.horas||0) });
+  draw("chHHporAtividade","bar","HH por atividade", seriesFromObj(aggAtv), {indexAxis:"y"});
+
+  // Top colaboradores
+  let qtc = sb.from("rdo_hh").select("horas, colaborador_id, colaboradores(matricula,nome,funcao), rdo:data!inner(data,obra_id,encarregado_id)").gte("data",ini).lte("data",fim);
+  if(obra) qtc = qtc.eq("rdo.obra_id",obra);
+  if(enc)  qtc = qtc.eq("rdo.encarregado_id",enc);
+  const th = (await qtc).data||[];
+  const aggCol={}; th.forEach(x=>{ const n=colabLabel(x.colaboradores||{}); aggCol[n]=(aggCol[n]||0)+(x.horas||0) });
+  const top = Object.entries(aggCol).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  draw("chTopColab","bar","Top 10 colaboradores",{labels:top.map(x=>x[0]),data:top.map(x=>x[1])},{indexAxis:"y"});
+
+  // Top encarregados (HH somadas) e HH por obra
+  let qenc = sb.from("rdo_hh").select("horas,rdo:data!inner(obra_id,encarregado_id,enc:encarregado_id(nome))").gte("data",ini).lte("data",fim);
+  if(obra) qenc = qenc.eq("rdo.obra_id",obra);
+  if(enc)  qenc = qenc.eq("rdo.encarregado_id",enc);
+  const encRs = (await qenc).data||[];
+  const aggEnc={}; const aggObra={};
+  encRs.forEach(r=>{
+    const n=r.rdo?.enc?.nome||r.rdo?.encarregado_id||"—"; aggEnc[n]=(aggEnc[n]||0)+(r.horas||0);
+    const ob = r.rdo?.obra_id; if(ob) aggObra[obraMap[ob]||ob]=(aggObra[obraMap[ob]||ob]||0)+(r.horas||0);
+  });
+  const encTop = Object.entries(aggEnc).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  draw("chTopEnc","bar","Ranking encarregados",{labels:encTop.map(x=>x[0]),data:encTop.map(x=>x[1])},{indexAxis:"y"});
+  draw("chHHporObra","bar","HH por obra", seriesFromObj(aggObra), {indexAxis:"y"});
+
+  // Ocorrências por obra
+  const aggOObra={}; occ.forEach(o=>{ const n=obraMap[o.obra_id]||o.obra_id; aggOObra[n]= (aggOObra[n]||0)+1; });
+  draw("chOcoObra","bar","Ocorrências por obra", seriesFromObj(aggOObra), {indexAxis:"y"});
+
+  // Horas perdidas por motivo
+  let qhp = sb.from("ocorrencias_env").select("prazo_impactado_h, ocorrencias:ocorrencia_id(tipo, data, obra_id)").gte("ocorrencias.data",ini).lte("ocorrencias.data",fim);
+  if(obra) qhp = qhp.eq("ocorrencias.obra_id",obra);
+  const hp = (await qhp).data||[];
+  const aggLost={}; hp.forEach(r=>{ const t=r.ocorrencias?.tipo||"outros"; aggLost[t]=(aggLost[t]||0)+(r.prazo_impactado_h||0) });
+  draw("chHorasPerdidas","bar","Horas perdidas",{labels:Object.keys(aggLost),data:Object.values(aggLost)});
+
+  // Recursos
+  let qeq = sb.from("rdo_equip").select("h_inicial,h_final,equipamento_id,equipamentos(nome), rdo:id!inner(data,obra_id,encarregado_id)").gte("data",ini).lte("data",fim);
+  if(obra) qeq = qeq.eq("rdo.obra_id",obra);
+  if(enc)  qeq = qeq.eq("rdo.encarregado_id",enc);
+  const eq = (await qeq).data||[];
+  const aggEq={}; eq.forEach(e=>{ const n=e.equipamentos?.nome||e.equipamento_id; const u=(e.h_final||0)-(e.h_inicial||0); aggEq[n]=(aggEq[n]||0)+u });
+  draw("chEquip","bar","Uso de equipamentos",{labels:Object.keys(aggEq),data:Object.values(aggEq)});
+
+  let qmt = sb.from("rdo_materiais").select("acao,quantidade,material_id,materiais(nome), rdo:id!inner(data,obra_id,encarregado_id)").gte("data",ini).lte("data",fim);
+  if(obra) qmt = qmt.eq("rdo.obra_id",obra);
+  if(enc)  qmt = qmt.eq("rdo.encarregado_id",enc);
+  const mt = (await qmt).data||[];
+  const aggMatUse={}; const aggMatRec={};
+  mt.forEach(m=>{
+    const n=m.materiais?.nome||m.material_id;
+    if(m.acao==="utilizado") aggMatUse[n]=(aggMatUse[n]||0)+(m.quantidade||0);
+    if(m.acao==="recebido") aggMatRec[n]=(aggMatRec[n]||0)+(m.quantidade||0);
+  });
+  draw("chMateriais","bar","Materiais utilizados",{labels:Object.keys(aggMatUse),data:Object.values(aggMatUse)});
+  draw("chMateriaisRec","doughnut","Materiais recebidos", seriesFromObj(aggMatRec));
+
+  // Presença por encarregado (% presente / total registros)
+  const presByEnc = {};
+  sts.forEach(s=>{
+    const rid = s.rdo?.id; if(!rid) return;
+    const e = s.rdo?.encarregado_id; if(!e) return;
+    presByEnc[e] = presByEnc[e] || { total:0, pres:0 };
+    presByEnc[e].total += 1; if(s.status==="presente") presByEnc[e].pres += 1;
+  });
+  const encIds = Object.keys(presByEnc);
+  const encNames = await sb.from("colaboradores").select("id,nome").in("id",encIds);
+  const encNameMap={}; (encNames.data||[]).forEach(x=> encNameMap[x.id]=x.nome);
+  const presLabels = encIds.map(id=> encNameMap[id]||id);
+  const presPct = encIds.map(id=> (presByEnc[id].total? (100*presByEnc[id].pres/presByEnc[id].total):0));
+  draw("chPresencaEnc","bar","Taxa de presença por encarregado (%)",{labels:presLabels,data:presPct});
+
+  // Avançado: HH vs Ocorr por dia (bubble)
+  const oMap = mapODia; // occurrences per date
+  const xdates = [...new Set([...lbls, ...oMap.keys()].sort())];
+  const dataB = xdates.map((d,i)=>({x:i+1,y:(mapHH.get(d)||0),r: Math.max(4, (oMap.get(d)||0)*3)}));
+  draw("chHHvsOcorr","bubble","HH x Ocorrências/dia",{labels:xdates,data:dataB},{ parsing:false, scales:{x:{title:{display:true,text:"dias (ordenados)"}}, y:{title:{display:true,text:"HH"}}} });
+
+  // KPIs
+  const totalHH = Array.from(mapHH.values()).reduce((a,b)=>a+b,0);
+  gid("kpiHH").textContent = totalHH.toFixed(1);
+  gid("kpiOcorr").textContent = occ.length;
+  const rh = (await sb.from("rdo").select("id").eq("data",fim).limit(1000)).data||[];
+  const ids = rh.map(x=>x.id);
+  let efet = 0;
+  if(ids.length){
+    const pres = await sb.from("rdo_colab_status").select("colaborador_id,status").in("rdo_id",ids);
+    efet = new Set((pres.data||[]).filter(x=>x.status==="presente").map(x=>x.colaborador_id)).size;
+  }
+  gid("kpiEfetivo").textContent = efet || "—";
+}
+
+function seriesFromMap(map){ if(!map || map.size===0){const d=today();return {labels:[d],data:[0]}} const labels=[...map.keys()].sort(); const data=labels.map(k=>map.get(k)); return {labels,data} }
+function seriesFromObj(o){ const ks=Object.keys(o||{}); if(!ks.length) return {labels:["—"],data:[0]}; return {labels:ks,data:ks.map(k=>o[k])} }
+function draw(id,type,label,{labels,data},opts){
+  const el = gid(id); if(!el) return;
+  const colors = pal((labels||[]).length||1);
+  if(window.__CHARTS==null) window.__CHARTS={};
+  if(window.__CHARTS[id]) window.__CHARTS[id].destroy();
+  let ds;
+  if(type==="bubble"){
+    ds = [{ label, data, backgroundColor: colors.map(c=>c+"88"), borderColor: colors, borderWidth:1 }];
+  }else if(type==="line"){
+    ds = [{ label, data, backgroundColor: colors[0], borderColor: colors[0], borderWidth:2, pointRadius:2, fill:false }];
+  }else{
+    ds = [{ label, data, backgroundColor: colors, borderColor: colors, borderWidth: (type==="line"?2:1), fill: (type==="line")?false:true }];
+  }
+  window.__CHARTS[id] = new Chart(el.getContext("2d"),{
+    type,
+    data:{ labels, datasets: ds },
+    options:Object.assign({
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ position:"bottom", labels:{ boxWidth:10 }}, tooltip:{ mode:"index", intersect:false } },
+      scales: (type==="pie"||type==="doughnut"||type==="polarArea")?{}:{ x:{ grid:{ display:false } }, y:{ beginAtZero:true } }
+    }, opts||{})
+  });
+  setEmptyState(id, labels, (type==="bubble"? data.map(p=>p.r):data));
+}
+
+/* ===== RDO List ===== */
+gid("btnRdoList").addEventListener("click",loadRdoList);
+gid("btnNovoRDO").addEventListener("click",()=> document.querySelector("header nav a[data-tab='#tab-rdo']").click());
+async function loadRdoList(){
+  if(!sb) return;
+  const hoje = today();
+  gid("rdoListIni").value = gid("rdoListIni").value || hoje;
+  gid("rdoListFim").value = gid("rdoListFim").value || hoje;
+  const ini = gid("rdoListIni").value;
+  const fim = gid("rdoListFim").value;
+  const obra = gid("rdoListObra").value || null;
+  const encf = gid("rdoEncList").value || null;
+  const qStr = (gid("qRdo").value||"").trim().toLowerCase();
+
+  let q = sb.from("rdo").select("id,numero,data,obra_id,encarregado_id,enc:encarregado_id(nome)").gte("data",ini).lte("data",fim).order("data",{ascending:false});
+  if(obra) q = q.eq("obra_id",obra);
+  if(encf) q = q.eq("encarregado_id",encf);
+  let r = (await q).data||[];
+  const ids = r.map(x=>x.id);
+
+  // HH por RDO
+  let hhSum = {}; let occCount = {};
+  if(ids.length){
+    const rs = await sb.from("rdo_hh").select("rdo_id,horas").in("rdo_id",ids);
+    (rs.data||[]).forEach(h=> hhSum[h.rdo_id]=(hhSum[h.rdo_id]||0)+(h.horas||0));
+    const ro = await sb.from("ocorrencias").select("rdo_id").in("rdo_id",ids);
+    (ro.data||[]).forEach(o=> occCount[o.rdo_id]=(occCount[o.rdo_id]||0)+1);
+  }
+
+  // Pesquisa livre
+  if(qStr){
+    const idsByOcc = ids.length ? (await sb.from("ocorrencias").select("rdo_id,descricao").in("rdo_id",ids)).data||[] : [];
+    const idsByOccF = new Set(idsByOcc.filter(o=> (o.descricao||"").toLowerCase().includes(qStr)).map(o=>o.rdo_id));
+    r = r.filter(x=> ((x.numero||"").includes(qStr)) || ((x.enc?.nome||"").toLowerCase().includes(qStr)) || idsByOccF.has(x.id) );
+  }
+
+  const tb = gid("tblRdos");
+  if(!r.length){ tb.innerHTML = `<tr><td colspan="7"><div class="badge">Sem RDOs no período.</div></td></tr>`; return; }
+  tb.innerHTML = r.map(x=>`<tr data-id="${x.id}">
+    <td>${x.numero||""}</td><td>${x.data||""}</td><td>${x.obra_id||""}</td>
+    <td>${x.enc?.nome||"—"}</td>
+    <td>${(hhSum[x.id]||0).toFixed(1)}</td><td>${occCount[x.id]||0}</td>
+    <td>
+      <button class="btn ghost" data-print="${x.id}">Imprimir</button>
+      <button class="btn ghost" data-del="${x.id}">Excluir</button>
+    </td>
+  </tr>`).join("");
+  if(!tb._dblBound){
+    tb.addEventListener("dblclick",(e)=>{
+      const tr = e.target.closest("tr"); if(!tr) return;
+      openRdoForEdit(tr.getAttribute("data-id"));
+    });
+    tb._dblBound = true;
+  }
+}
+document.addEventListener("click",async(e)=>{
+  const pid = e.target.getAttribute("data-print");
+  if(pid){ openRdoForEdit(pid); setTimeout(()=>window.print(),300); }
+  const did = e.target.getAttribute("data-del");
+  if(did){
+    if(confirm("Excluir este RDO? Esta ação não pode ser desfeita.")){
+      await sb.from("rdo").delete().eq("id",did).catch(()=>{});
+      toast("RDO excluído"); loadRdoList();
+    }
+  }
+});
+
+/* ===== Novo RDO ===== */
+function onOpenRdo(){
+  document.querySelectorAll("#rdoSteps a").forEach(a=> a.onclick=(e)=>{e.preventDefault(); document.querySelectorAll("#rdoSteps a").forEach(x=>x.classList.remove("active")); a.classList.add("active"); const sel=a.getAttribute("href"); const sec=document.querySelector(sel); sec.classList.add("open"); sec.scrollIntoView({behavior:"smooth",block:"start"})});
+  gid("rdoData").value = today(); setDow(today());
+  gid("horaChegada").value = "08:00";
+  gid("horaInicioTrab").value = "08:00";
+  previewNextRdo();
+  ["rdoObra","encIdent","supSelect"].forEach(id=>makeSearchableSelect(gid(id)));
+  document.querySelectorAll("#chipsPts .chip").forEach(c=> c.addEventListener("click",()=>{ document.querySelectorAll("#chipsPts .chip").forEach(x=>x.classList.remove("active")); c.classList.add("active"); setPts(c.dataset.v==="sim"); }));
+  document.querySelector("#chipsPts .chip[data-v='nao']").classList.add("active"); setPts(false);
+
+  // Enc de ident vai controlar presenças
+  gid("encFromIdent").innerHTML = ""; gid("encFromIdent").append(new Option("", ""));
+  Array.from(gid("encIdent").options).forEach(o=> gid("encFromIdent").append(opt(o.text, o.value)));
+  gid("encFromIdent").value = gid("encIdent").value; gid("encFromIdent").disabled = true;
+
+  // Build Confirmação UI
+  renderConfirmacaoUI();
+  atividades = []; ocorrs = []; equipe = []; batidas = {};
+}
+function setDow(val){ if(!val) return gid("rdoDow").textContent="—"; const d=new Date(val+"T00:00:00"); gid("rdoDow").textContent=d.toLocaleDateString("pt-BR",{weekday:"long"}) }
+gid("rdoData").addEventListener("change",()=> setDow(gid("rdoData").value));
+async function previewNextRdo(){ try{ const { data, error } = await sb.rpc("rdo_preview_next"); if(!error && data){ gid("rdoNumero").value = data; return; } }catch(e){ }
+  const r = await sb.from("rdo").select("numero").order("numero",{ascending:false}).limit(1);
+  const last = r.data?.[0]?.numero; const num = last? (parseInt(last,10)+1) : 1; gid("rdoNumero").value = pad8(num);
+}
+function setPts(sim){ gid("ptsWrap").style.display = sim? "block":"none"; }
+
+/* Localização manual + GPS */
+let geo = { lat:null, lon:null, acc:null };
+gid("btnGeo").addEventListener("click", async ()=>{
+  try{
+    const pos = await new Promise((res,rej)=> navigator.geolocation.getCurrentPosition(res,rej,{ enableHighAccuracy:true, timeout:12000 }));
+    geo.lat = +(pos.coords.latitude.toFixed(5)); geo.lon = +(pos.coords.longitude.toFixed(5)); geo.acc = +(pos.coords.accuracy.toFixed(0));
+    gid("geoBadge").textContent = `GPS: ${geo.lat}, ${geo.lon} (±${geo.acc}m)`;
+  }catch(err){ alert("Não foi possível obter a localização: "+err.message); }
+});
+
+/* Presenças: equipe + confirmação */
+let equipe = []; // [{id, nomeX, status, destino, nfc_tag, ...}]
+let batidas = {}; // {cid:{ini,almoco_s,almoco_v,fim}}
+let currentPeriod = "ini";
+
+gid("encIdent").addEventListener("change", async ()=>{
+  gid("encFromIdent").value = gid("encIdent").value;
+  await loadEquipe();
+  renderConfirmTable();
+});
+async function loadEquipe(){
+  if(!sb) return;
+  equipe = []; batidas={};
+  const enc = gid("encIdent").value;
+  if(enc){
+    let rs = (await sb.from("colaboradores").select("id,matricula,nome,funcao,nfc_tag").eq("encarregado_id",enc).order("nome")).data||[];
+    equipe = rs.map(c=>({ id:c.id, nomeX:colabLabel(c), status:"ausente", destino:null, nfc:c.nfc_tag||null }));
+    rs.forEach(c=> batidas[c.id] = {ini:null,almoco_s:null,almoco_v:null,fim:null} );
+  }
+  renderEquipe(); buildOccDistrib(); renderConfirmTable();
+}
+
+document.getElementById("btnAddExtra").addEventListener("click", async ()=>{
+  const sel = gid("extraColab"); if(!sel.value) return;
+  const id = sel.value;
+  const c = (await sb.from("colaboradores").select("id,matricula,nome,funcao,nfc_tag").eq("id",id).single()).data;
+  if(!c) return;
+  if(equipe.find(e=>e.id===id)){ toast("Colaborador já na equipe do dia."); return; }
+  equipe.push({ id:c.id, nomeX:colabLabel(c), status:"ausente", destino:null, nfc:c.nfc_tag||null });
+  batidas[id] = {ini:null,almoco_s:null,almoco_v:null,fim:null};
+  renderEquipe(); buildOccDistrib(); renderConfirmTable();
+});
+
+function renderEquipe(){
+  const host = gid("listaEquipe");
+  if(!equipe.length){ host.innerHTML = '<div class="badge">Selecione o encarregado na Identificação para carregar a equipe.</div>'; return; }
+  host.innerHTML = equipe.map((c,i)=>`
+    <div class="cardL">
+      <div class="n"><b>${c.nomeX}</b></div>
+      <div class="s">
+        <select data-i="${i}" class="selStatus">
+          <option value="presente"${c.status==='presente'?' selected':''}>Presente</option>
+          <option value="ausente"${c.status==='ausente'?' selected':''}>Ausente</option>
+          <option value="atrasado"${c.status==='atrasado'?' selected':''}>Atrasado</option>
+          <option value="emprestado"${c.status==='emprestado'?' selected':''}>Emprestado (dia)</option>
+          <option value="transferido"${c.status==='transferido'?' selected':''}>Transferido (definitivo)</option>
+          <option value="demitido"${c.status==='demitido'?' selected':''}>Demitido</option>
+          <option value="ferias"${c.status==='ferias'?' selected':''}>Férias</option>
+          <option value="afastado"${c.status==='afastado'?' selected':''}>Afastado</option>
+        </select>
+      </div>
+      <div class="a">
+        <span class="status-chip ${statusClass(c.status)}">${c.status}</span>
+        ${(c.status==='emprestado'||c.status==='transferido') ? destinoSelectHtml(i) : ''}
+      </div>
+      <div class="h"><span class="badge">Batidas: ${renderBadgeBatidas(c.id)}</span></div>
+      <div class="nfc"><span class="badge">${c.nfc?('TAG '+String(c.nfc).slice(0,8)+'…'):'—'}</span></div>
+    </div>
+  `).join("");
+  document.querySelectorAll(".transferSel").forEach(s=> makeSearchableSelect(s));
+}
+function renderBadgeBatidas(cid){
+  const b = batidas[cid]||{};
+  const k = ["ini","almoco_s","almoco_v","fim"];
+  return k.map(x=> (b[x]||"—")).join(" • ");
+}
+function statusClass(s){
+  return s==='presente'?'st-presente':
+         s==='ausente'?'st-ausente':
+         s==='atrasado'?'st-atrasado':
+         s==='emprestado'?'st-emprestado':
+         s==='transferido'?'st-transferido':
+         s==='demitido'?'st-demitido':
+         s==='ferias'?'st-ferias':'st-afastado';
+}
+function destinoSelectHtml(i){
+  const encOps = Array.from(gid("encIdent").options).filter(o=>o.value && o.value!==gid("encIdent").value).map(o=>`<option value="${o.value}">${o.text}</option>`).join("");
+  return `<div style="margin-top:6px"><label style="font-size:12px">Destino</label><select class="transferSel" data-i="${i}">${encOps}</select></div>`;
+}
+document.addEventListener("change",(e)=>{
+  if(e.target.classList.contains("selStatus")){
+    const i = +e.target.getAttribute("data-i");
+    equipe[i].status = e.target.value;
+    renderEquipe(); buildOccDistrib(); renderConfirmTable();
+  }
+  if(e.target.classList.contains("transferSel")){
+    const i = +e.target.getAttribute("data-i");
+    equipe[i].destino = e.target.value || null;
+  }
+});
+
+/* Confirmação de presença */
+function renderConfirmacaoUI(){
+  document.getElementById("confPer").addEventListener("click",(e)=>{
+    const c = e.target.closest(".chip"); if(!c) return;
+    document.querySelectorAll("#confPer .chip").forEach(x=>x.classList.remove("active"));
+    c.classList.add("active"); currentPeriod = c.dataset.per; renderConfirmTable();
+  });
+  document.getElementById("btnNFCConf").addEventListener("click",()=> startNFC(currentPeriod));
+  document.getElementById("btnFaceStart_conf").addEventListener("click",()=> startFace("conf"));
+  document.getElementById("btnFaceCap_conf").addEventListener("click",()=> captureFace("conf"));
+  document.getElementById("btnFaceSave_conf").addEventListener("click",()=> saveFaceConf());
+  document.getElementById("btnFaceClose_conf").addEventListener("click",()=> closeFace("conf"));
+}
+function renderConfirmTable(){
+  const tb = gid("tblConfirma");
+  if(!equipe.length){ tb.innerHTML = `<tr><td colspan="4"><div class="badge">Carregue a equipe do encarregado na Identificação.</div></td></tr>`; return; }
+  tb.innerHTML = equipe.map(c=>{
+    const hora = batidas[c.id]?.[currentPeriod] || "—";
+    const st = c.status;
+    const btn = `<button class="btn ghost btnManualConf" data-cid="${c.id}">Confirmar agora</button>`;
+    return `<tr>
+      <td>${c.nomeX}</td>
+      <td><span class="status-chip ${statusClass(st)}">${st}</span></td>
+      <td>${hora}</td>
+      <td>${btn}</td>
+    </tr>`;
+  }).join("");
+}
+document.addEventListener("click",(e)=>{
+  const el = e.target.closest(".btnManualConf"); if(!el) return;
+  const cid = el.getAttribute("data-cid");
+  doConfirm(cid, currentPeriod, "manual");
+});
+function doConfirm(cid, per, method){
+  const hora = new Date().toTimeString().slice(0,5);
+  if(!batidas[cid]) batidas[cid] = {ini:null,almoco_s:null,almoco_v:null,fim:null};
+  batidas[cid][per] = hora;
+  const ix = equipe.findIndex(x=>x.id===cid);
+  if(ix>=0 && equipe[ix].status==="ausente"){ equipe[ix].status="presente"; renderEquipe(); buildOccDistrib(); }
+  renderConfirmTable();
+  capturePresenceGPS(cid, per, method||"manual").catch(()=>{});
+}
+
+/* NFC reader */
+async function startNFC(period){
+  const badge = gid("nfcConfStatus");
+  if(!("NDEFReader" in window)){ badge.textContent="NFC não suportado"; return }
+  badge.textContent = "Lendo NFC...";
+  try{
+    const r = new NDEFReader(); await r.scan();
+    r.onreading = async(ev)=>{
+      const idStr = ev.serialNumber || "";
+      badge.textContent = "TAG "+idStr.slice(0,12)+"...";
+      const q = await sb.from("colaboradores").select("id").eq("nfc_tag",idStr).limit(1);
+      const cid = q.data?.[0]?.id;
+      if(!cid){ return }
+      doConfirm(cid, period, "nfc");
+    };
+  }catch(err){ badge.textContent = "NFC erro: "+err.message }
+}
+
+/* Face capture (Confirmação) */
+const _cam = {};
+async function startFace(per){
+  try{
+    _cam[per] = await navigator.mediaDevices.getUserMedia({ video:true, audio:false });
+  }catch(e){ return alert("Câmera indisponível: "+e.message) }
+  const v = gid("faceVideo_"+per); const c = gid("faceCanvas_"+per);
+  v.srcObject = _cam[per]; v.style.display="block"; c.style.display="none";
+  gid("btnFaceCap_"+per).disabled=false; gid("btnFaceSave_"+per).disabled=true; gid("btnFaceClose_"+per).disabled=false;
+}
+function captureFace(per){
+  const v = gid("faceVideo_"+per); const c = gid("faceCanvas_"+per);
+  if(!v.srcObject) return;
+  const ctx = c.getContext("2d"); ctx.drawImage(v,0,0,c.width,c.height);
+  c.style.display="block"; v.style.display="none"; v.pause();
+  gid("btnFaceSave_"+per).disabled=false;
+}
+async function saveFaceConf(){
+  const sel = gid("faceSel_conf"); const cid = sel.value;
+  if(!cid){ return alert("Selecione o colaborador.") }
+  const c = gid("faceCanvas_conf");
+  if(c.style.display==="none"){ return alert("Capture a imagem antes de confirmar."); }
+  const blob = await new Promise(res=> c.toBlob(b=>res(b),"image/jpeg",0.85));
+  const num = gid("rdoNumero").value || "00000000";
+  const path = `rdo/${num}/BATIDAS/RDO${num}_CID${cid}_${currentPeriod}.jpg`;
+  const up = await sb.storage.from("rdo_fotos").upload(path, blob, { upsert:true });
+  if(up.error){ return alert("Upload falhou: "+up.error.message) }
+  doConfirm(cid, currentPeriod, "face");
+  try{ await sb.from("rdo_presenca_bio").insert({ rdo_id:null, rdo_numero_preview:num, colaborador_id:cid, periodo:currentPeriod, image_path:path, method:"face" }); }catch(_){}
+  toast("Presença confirmada por Face.");
+}
+
+/* GPS silencioso por confirmação */
+async function capturePresenceGPS(colaborador_id, period, method){
+  let lat=null, lon=null, acc=null;
+  try{
+    const pos = await new Promise((res,rej)=> navigator.geolocation.getCurrentPosition(res,rej,{ enableHighAccuracy:true, timeout:12000, maximumAge:0 }));
+    lat = +(pos.coords.latitude.toFixed(5)); lon = +(pos.coords.longitude.toFixed(5)); acc = +(pos.coords.accuracy.toFixed(0));
+  }catch(e){ /* silencioso */ }
+  const rdoNumero = gid("rdoNumero")?.value || null;
+  const obra_id = gid("rdoObra")?.value || null;
+  const data = gid("rdoData")?.value || today();
+  await sb.from("rdo_presenca_gps").insert({
+    rdo_id: null, rdo_numero_preview: rdoNumero, obra_id, data,
+    colaborador_id, periodo: period, latitude: lat, longitude: lon, accuracy: acc, method: method||"nfc"
+  }).catch(()=>{});
+}
+
+/* Atividades do dia (disciplina -> atividade, com complemento) */
+let atividades = []; // {id, disciplina, nome, complemento, ini, fim, prazoH, detalhe, hh:{cid:HH}, files}
+function syncDiscAtv(){
+  const disc = gid("disciplinaSelect").value;
+  const list = (DISC_ATV[disc]||[]).map(n=>({id:n==="Outras"?"__outros__":n, nome:n}));
+  const s = gid("atvSelectDyn"); s.innerHTML="";
+  list.forEach(a=> s.append(opt(a.nome, a.id, a.nome)) );
+  makeSearchableSelect(s);
+  gid("atvComplemento").value="";
+}
+gid("disciplinaSelect").addEventListener("change", syncDiscAtv);
+gid("atvSelectDyn").addEventListener("change",()=>{
+  const v = gid("atvSelectDyn").value; gid("atvComplemento").placeholder = (v==="__outros__"?"Descreva a atividade":"Complemento (opcional)");
+});
+gid("btnAddAtv").addEventListener("click",()=>{
+  const disc = gid("disciplinaSelect").value; if(!disc){ alert("Selecione a disciplina"); return }
+  let nome = gid("atvSelectDyn").value; let nomeLbl = gid("atvSelectDyn").options[gid("atvSelectDyn").selectedIndex]?.text || "";
+  if(nome==="__outros__"){
+    nomeLbl = (gid("atvComplemento").value||"").trim(); if(!nomeLbl){ alert("Descreva a atividade (Outras)"); return }
+  }else{
+    const compl = (gid("atvComplemento").value||"").trim(); if(compl) nomeLbl = `${nomeLbl} — ${compl}`;
+  }
+  const id = crypto.randomUUID();
+  const ini="08:00", fim="17:00", prazoH = hdiff(ini,fim);
+  atividades.push({ id, disciplina:disc, nome:nomeLbl, ini, fim, prazoH, detalhe:"", hh:{}, files:null });
+  renderAtividades();
+});
+function presentes(){ return equipe.filter(e=>["presente","atrasado","emprestado"].includes(e.status)) }
+function renderAtividades(){
+  const w = gid("wrapAtividades");
+  if(!atividades.length){ w.innerHTML = '<div class="badge">Adicione atividades. Em cada uma, ajuste início/fim e HH por colaborador presente.</div>'; return; }
+  w.innerHTML = atividades.map((a,ai)=>{
+    const rows = presentes().map(p=>{
+      const v = a.hh[p.id]||a.prazoH;
+      return `<tr><td>${p.nomeX}</td><td><input type="time" step="60" value="${hhToTime(v)}" data-ai="${ai}" data-cid="${p.id}" class="inHH"></td></tr>`;
+    }).join("");
+    return `<div class="card">
+      <div><b>${a.disciplina}</b> — <b>${a.nome}</b></div>
+      <div class="grid g4" style="margin-top:6px">
+        <div><label>Início</label><input type="time" value="${a.ini}" data-ai="${ai}" class="atvIni"></div>
+        <div><label>Término</label><input type="time" value="${a.fim}" data-ai="${ai}" class="atvFim"></div>
+        <div><label>Detalhe</label><input value="${a.detalhe||""}" data-ai="${ai}" class="atvDet"></div>
+        <div><label>Foto(s)</label><input type="file" accept="image/*" data-ai="${ai}" class="atvFotos" multiple></div>
+      </div>
+      <div class="grid"><button class="btn ghost" data-aplicar="${ai}">Aplicar prazo a todos</button></div>
+      <div class="badge">Prazo calculado: ${fmt1(a.prazoH)} h • HH somadas: <span id="sumHH_${ai}">0</span> h</div>
+      <table style="margin-top:6px"><thead><tr><th>Colaborador</th><th>HH</th></tr></thead><tbody>${rows}</tbody></table>
+    </div>`;
+  }).join("");
+  somaHH();
+}
+function hhToTime(h){ const H = Math.floor(h||0); const M = Math.round(((h||0)-H)*60); return String(H).padStart(2,"0")+":"+String(M).padStart(2,"0") }
+document.addEventListener("input",(e)=>{
+  if(e.target.classList.contains("inHH")){
+    const ai = +e.target.getAttribute("data-ai");
+    const cid = e.target.getAttribute("data-cid");
+    atividades[ai].hh[cid] = toHours(e.target.value);
+    somaHH();
+  }
+  if(e.target.classList.contains("atvIni") || e.target.classList.contains("atvFim")){
+    const ai = +e.target.getAttribute("data-ai");
+    const ini = document.querySelector(`.atvIni[data-ai="${ai}"]`).value;
+    const fim = document.querySelector(`.atvFim[data-ai="${ai}"]`).value;
+    atividades[ai].ini = ini; atividades[ai].fim = fim; atividades[ai].prazoH = Math.max(0,hdiff(ini,fim));
+  }
+  if(e.target.classList.contains("atvDet")){
+    const ai = +e.target.getAttribute("data-ai");
+    atividades[ai].detalhe = e.target.value;
+  }
+});
+document.addEventListener("change",(e)=>{
+  if(e.target.classList.contains("atvFotos")){
+    const ai = +e.target.getAttribute("data-ai");
+    atividades[ai].files = e.target.files;
+  }
+});
+document.addEventListener("click",(e)=>{
+  const ap = e.target.getAttribute("data-aplicar");
+  if(ap!=null){
+    const ai = +ap;
+    const prazo = atividades[ai].prazoH;
+    presentes().forEach(p=> atividades[ai].hh[p.id]=prazo );
+    renderAtividades();
+  }
+});
+function somaHH(){
+  atividades.forEach((a,ai)=>{
+    const s = Object.values(a.hh).reduce((x,y)=>x+(y||0),0);
+    const el = gid("sumHH_"+ai); if(el) el.textContent = fmt1(s);
+  });
+  buildResumo();
+}
+
+/* Ocorrências */
+let ocorrs = [];
+function buildOccDistrib(){
+  const tb = gid("occTBody");
+  tb.innerHTML = presentes().map(p=>`<tr><td>${p.nomeX}</td><td><input type="time" step="60" value="00:30" class="occInp" data-cid="${p.id}"></td></tr>`).join("");
+}
+gid("btnOccAll").addEventListener("click",()=>{ const v = gid("occAll").value || "00:00"; document.querySelectorAll(".occInp").forEach(i=> i.value=v) });
+gid("btnAddOcc").addEventListener("click",()=>{
+  const tipo = gid("occTipo").value;
+  const ini  = gid("occIni").value||"00:00";
+  const fim  = gid("occFim").value||"00:00";
+  const desc = (gid("occDesc").value||"").trim();
+  if(!desc){ alert("Descreva a ocorrência"); return }
+  const impact = {};
+  document.querySelectorAll(".occInp").forEach(i=> impact[i.dataset.cid]=toHours(i.value||"00:00"));
+  ocorrs.push({ tipo, ini, fim, desc, files: gid("occFoto").files, impact });
+  gid("occFoto").value=""; gid("occDesc").value="";
+  gid("occLista").innerHTML = ocorrs.map((o,i)=>`<li>#${i+1} ${o.tipo} ${o.ini}-${o.fim}</li>`).join("");
+  buildResumo();
+});
+
+/* Clima (INMET → Open‑Meteo) */
+gid("btnClima").addEventListener("click",async()=>{
+  const date = gid("rdoData").value || today();
+  try{
+    const pos = await new Promise((res,rej)=> navigator.geolocation.getCurrentPosition(res,rej,{ enableHighAccuracy:true, timeout:12000 }));
+    const lat = pos.coords.latitude.toFixed(4), lon = pos.coords.longitude.toFixed(4);
+    const inmet = await tryInmet(lat,lon,date);
+    if(inmet){ renderClimaCards(inmet.cards, "INMET (observado)", "https://apitempo.inmet.gov.br"); return; }
+    const om = await openMeteo(lat,lon,date);
+    renderClimaCards(om.cards, "Open‑Meteo (previsão/histórico)", "https://open-meteo.com/");
+  }catch(err){ alert("Ative a localização para buscar clima automaticamente."); }
+});
+async function tryInmet(lat,lon,date){
+  try{
+    const estacoes = await fetch("https://apitempo.inmet.gov.br/estacoes/").then(r=>r.json()).catch(()=>null);
+    if(!Array.isArray(estacoes) || !estacoes.length) return null;
+    let best=null, bestd=1e9;
+    for(const e of estacoes){
+      if(!e.latitude || !e.longitude) continue;
+      const d = Math.hypot(parseFloat(e.latitude)-lat, parseFloat(e.longitude)-lon);
+      if(d<bestd){ best=e; bestd=d; }
+    }
+    if(!best || !best.codigo) return null;
+    const dados = await fetch(`https://apitempo.inmet.gov.br/estacao/dados/${best.codigo}/${date}`).then(r=>r.json()).catch(()=>null);
+    if(!Array.isArray(dados) || !dados.length) return null;
+    const num = (v)=> v==null? null : Number(String(v).replace(",","."));
+    const pick = (k)=> dados.map(x=> num(x[k])).filter(x=>typeof x==="number");
+    const avg = (a)=> a.length? a.reduce((s,v)=>s+v,0)/a.length : 0;
+    const sum = (a)=> a.length? a.reduce((s,v)=>s+v,0) : 0;
+    const min = (a)=> a.length? Math.min(...a) : 0;
+    const max = (a)=> a.length? Math.max(...a) : 0;
+    const cards = [
+      {t:"Temperatura média (°C)",v:avg(pick("TEM_INS"))},
+      {t:"Temperatura min (°C)",v:min(pick("TEM_INS"))},
+      {t:"Temperatura max (°C)",v:max(pick("TEM_INS"))},
+      {t:"Sensação (°C)",v:avg(pick("SEN_INS"))},
+      {t:"Umidade (%)",v:avg(pick("UMD_INS"))},
+      {t:"Ponto de orvalho (°C)",v:avg(pick("PTO_INS"))},
+      {t:"Pressão (hPa)",v:avg(pick("PRE_INS"))},
+      {t:"Vento (m/s)",v:avg(pick("VEN_VEL"))},
+      {t:"Rajadas (m/s)",v:avg(pick("VEN_RAJ"))},
+      {t:"Precipitação (mm)",v:sum(pick("CHUVA"))}
+    ];
+    return { cards };
+  }catch(e){ return null; }
+}
+async function openMeteo(lat,lon,date){
+  const url = "https://api.open-meteo.com/v1/forecast?latitude="+lat+"&longitude="+lon+"&hourly=temperature_2m,apparent_temperature,relative_humidity_2m,dew_point_2m,pressure_msl,cloud_cover,precipitation,wind_speed_10m,wind_gusts_10m&daily=temperature_2m_max,temperature_2m_min&timezone=auto&start_date="+date+"&end_date="+date;
+  const js = await (await fetch(url)).json();
+  const H = js.hourly||{}; const D = js.daily||{};
+  const avg = (a)=>{ if(!a||!a.length) return 0; let s=0,c=0; for(let i=0;i<a.length;i++){ if(a[i]==null) continue; s+=a[i]; c++ } return c?s/c:0 };
+  const sum = (a)=>{ if(!a||!a.length) return 0; let s=0; for(let i=0;i<a.length;i++){ if(a[i]==null) continue; s+=a[i] } return s };
+  const cards = [
+    {t:"Temperatura média (°C)",v:avg(H.temperature_2m)},
+    {t:"Temperatura min (°C)",v:(D.temperature_2m_min||[0])[0]||0},
+    {t:"Temperatura max (°C)",v:(D.temperature_2m_max||[0])[0]||0},
+    {t:"Sensação (°C)",v:avg(H.apparent_temperature)},
+    {t:"Umidade (%)",v:avg(H.relative_humidity_2m)},
+    {t:"Ponto de orvalho (°C)",v:avg(H.dew_point_2m)},
+    {t:"Pressão (hPa)",v:avg(H.pressure_msl)},
+    {t:"Nuvens (%)",v:avg(H.cloud_cover)},
+    {t:"Precipitação (mm)",v:sum(H.precipitation)},
+    {t:"Vento (m/s)",v:avg(H.wind_speed_10m)},
+    {t:"Rajadas (m/s)",v:avg(H.wind_gusts_10m)}
+  ];
+  return { cards };
+}
+function renderClimaCards(cards, fonteLabel, fonteUrl){
+  const box = gid("climaCards");
+  box.innerHTML = cards.map(c=>`<div class="card"><div>${c.t}</div><div><b>${fmt1(c.v)}</b></div></div>`).join("")
+    + `<div class="badge" style="grid-column:1/-1">Fonte: <a href="${fonteUrl}" target="_blank" rel="noopener">${fonteLabel}</a></div>`;
+}
+
+/* Imprimir */
+gid("btnImprimir").addEventListener("click",()=> window.print());
+
+/* Resumo dinâmico */
+function buildResumo(){
+  const host = gid("resumoBox");
+  const hhCol = {};
+  atividades.forEach(a=> Object.entries(a.hh).forEach(([cid,h])=> hhCol[cid]=(hhCol[cid]||0)+(h||0)) );
+  const resumoHH = Object.entries(hhCol).map(([cid,h])=>{
+    const nm = (equipe.find(x=>x.id===cid)?.nomeX)||cid; return `<div class="card"><div><b>${nm}</b></div><div>${fmt1(h)} h</div></div>`;
+  }).join("") || '<div class="badge">Sem HH ainda.</div>';
+  const resumoOcc = ocorrs.map((o,i)=>`<div class="card"><b>#${i+1} ${o.tipo}</b><div>${o.ini}–${o.fim} • ${o.desc}</div></div>`).join("") || '<div class="badge">Sem ocorrências.</div>';
+  host.innerHTML = `
+    <div style="grid-column:1/-1"><b>HH por colaborador</b></div>${resumoHH}
+    <div style="grid-column:1/-1"><b>Ocorrências</b></div>${resumoOcc}
+  `;
+}
+
+/* Salvar RDO (com garantias) */
+let saving=false;
+gid("btnSalvarRDO").addEventListener("click",saveRDO);
+async function saveRDO(){
+  if(saving) return; saving=true;
+  try{
+    if(!sb){ alert("Aguarde o SDK..."); return }
+    const obra_id = gid("rdoObra").value; if(!obra_id){ alert("Selecione a obra"); return }
+    const data = gid("rdoData").value || today();
+    if(!gid("horaChegada").value){ alert("Informe a Hora de chegada ao campo"); return }
+    const teve_pts = document.querySelector("#chipsPts .chip.active")?.dataset.v === "sim";
+    if(teve_pts){
+      if(!(gid("ptsNumero").value||"").trim() || !(gid("ptsAbertura").value||"").trim() || !(gid("ptsDesc").value||"").trim()){
+        alert("Preencha Nº PTS, Hora de abertura e Descrição da atividade PTS.");
+        return;
+      }
+      if(!(gid("ptsFoto").files?.length)){ alert("Anexe pelo menos uma foto da PTS"); return }
+    }
+
+    // duplicidade equipe
+    const idsEq = equipe.map(e=>e.id);
+    if(new Set(idsEq).size !== idsEq.length){ alert("Existe colaborador duplicado na equipe do dia."); return }
+
+    // número único
+    let numero = gid("rdoNumero").value || await getNextNumero();
+    numero = await ensureNumeroUnique(numero);
+
+    const { data:{ user } } = await sb.auth.getUser();
+    const rowFull = {
+      obra_id, numero, data,
+      hora_chegada: gid("horaChegada").value || "08:00",
+      inicio_trabalho: gid("horaInicioTrab").value || "08:00",
+      supervisor_id: gid("supSelect").value || null,
+      encarregado_id: gid("encIdent").value || null,
+      clima_manha: gid("climaManha").value || null,
+      clima_tarde: gid("climaTarde").value || null,
+      clima_noite: gid("climaNoite").value || null,
+      teve_pts, pts_numero: teve_pts? (gid("ptsNumero").value || null) : null,
+      pts_abertura: teve_pts? (gid("ptsAbertura").value || null) : null,
+      pts_desc: teve_pts? (gid("ptsDesc").value || null) : null,
+      local_manual: (gid("localManual").value||null),
+      geo_lat: geo.lat, geo_lon: geo.lon, geo_acc: geo.acc,
+      created_by: user?.id || null,
+      resumo: (gid("rdoResumo").value||"").trim()
+    };
+    const ins = await sb.from("rdo").insert(rowFull).select("id");
+    if(ins.error){ alert("Erro ao salvar RDO: "+ins.error.message); return }
+    const rdo_id = ins.data?.[0]?.id;
+
+    // Vincula presenças GPS & Face capturadas ao RDO salvo
+    await sb.from("rdo_presenca_gps").update({ rdo_id }).eq("rdo_numero_preview", numero).is("rdo_id", null).catch(()=>{});
+    await sb.from("rdo_presenca_bio").update({ rdo_id }).eq("rdo_numero_preview", numero).is("rdo_id", null).catch(()=>{});
+
+    // Presenças/status
+    if(equipe.length){
+      const st = equipe.map(c=>({ rdo_id, colaborador_id:c.id, status:c.status, transfer_to:c.destino || null }));
+      await sb.from("rdo_colab_status").insert(st).catch(()=>{});
+    }
+
+    // Atividades + HH + fotos
+    for(const a of atividades){
+      const atv_id = await ensureAtividade(a.nome, obra_id);
+      const ia = await sb.from("rdo_atividades").insert({ rdo_id, atividade_id:atv_id, prazo_dia_h:a.prazoH, ini:a.ini, fim:a.fim, detalhe:a.detalhe }).select("id");
+      const rows = [];
+      Object.keys(a.hh).forEach(cid=>{
+        const hh = a.hh[cid]; if(hh>0) rows.push({ rdo_id, atividade_id:atv_id, colaborador_id:cid, horas: hh });
+      });
+      if(rows.length) await sb.from("rdo_hh").insert(rows).catch(()=>{});
+      await uploadFiles(a.files, "rdo/"+numero+"/ATV/", (i,f)=>"RDO"+numero+"_ATV_"+slug(a.nome)+"_"+String(i+1).padStart(4,"0")+"."+ext(f.name));
+    }
+
+    // Ocorrências + impactos + fotos
+    for(const o of ocorrs){
+      const io = await sb.from("ocorrencias").insert({ rdo_id, obra_id, tipo:o.tipo, descricao:o.desc, data, ini:o.ini, fim:o.fim }).select("id");
+      const oid = io.data?.[0]?.id;
+      if(oid){
+        const rows = Object.entries(o.impact).map(([cid,hh])=>({ ocorrencia_id:oid, colaborador_id:cid, prazo_impactado_h: hh }));
+        if(rows.length) await sb.from("ocorrencias_env").insert(rows).catch(()=>{});
+        await uploadFiles(o.files, "rdo/"+numero+"/OCO/", (i,f)=>"RDO"+numero+"_OCO_"+o.tipo+"_"+String(i+1).padStart(4,"0")+"."+ext(f.name));
+      }
+    }
+
+    // Equipamentos
+    if(eqRows.length){
+      await sb.from("rdo_equip").insert(eqRows.map(e=>({
+        rdo_id, equipamento_id:e.equipamento_id, motorista_id:e.motorista_id, h_inicial:e.h_ini, h_final:e.h_fim
+      }))).catch(()=>{});
+    }
+
+    // Materiais
+    if(matRows.length){
+      await sb.from("rdo_materiais").insert(matRows.map(m=>({
+        rdo_id, material_id:m.material_id, acao:m.acao, quantidade:m.qtde, unidade:m.unid
+      }))).catch(()=>{});
+    }
+
+    // Fotos PTS
+    if(teve_pts && gid("ptsFoto").files?.length){
+      await uploadFiles(gid("ptsFoto").files, "rdo/"+numero+"/PTS/", (i,f)=>"RDO"+numero+"_PTS_"+String(i+1).padStart(4,"0")+"."+ext(f.name));
+    }
+    // Fotos Observações
+    if(gid("obsFotos").files?.length){
+      await uploadFiles(gid("obsFotos").files, "rdo/"+numero+"/OBS/", (i,f)=>"RDO"+numero+"_OBS_"+String(i+1).padStart(4,"0")+"."+ext(f.name));
+    }
+
+    toast("RDO salvo com sucesso");
+    document.querySelector("header nav a[data-tab='#tab-dashboard']").click();
+    await loadDashboard(); await loadRdoList();
+  } finally { saving=false; }
+}
+async function getNextNumero(){
+  try{ const { data, error } = await sb.rpc("rdo_preview_next"); if(!error && data) return data }catch(e){}
+  const r = await sb.from("rdo").select("numero").order("numero",{ascending:false}).limit(1);
+  const last = r.data?.[0]?.numero; const num = last? (parseInt(last,10)+1) : 1; return pad8(num);
+}
+async function ensureNumeroUnique(n, tries=5){
+  let num = n;
+  for(let i=0;i<tries;i++){
+    const c = await sb.from("rdo").select("id",{count:"exact",head:true}).eq("numero",num);
+    if((c.count||0)===0) return num;
+    num = pad8(parseInt(num,10)+1);
+  }
+  return num;
+}
+async function ensureAtividade(nome, obra_id){
+  let r = await sb.from("atividades").select("id").eq("nome",nome).eq("obra_id",obra_id).limit(1);
+  if(r.data && r.data[0]) return r.data[0].id;
+  const ins = await sb.from("atividades").insert({ nome, obra_id }).select("id");
+  return ins.data?.[0]?.id || null;
+}
+async function uploadFiles(files, basePath, namer){
+  if(!files||!files.length || !sb) return;
+  for(let i=0;i<files.length;i++){
+    const f = files[i];
+    const path = basePath + namer(i,f);
+    const { error } = await sb.storage.from("rdo_fotos").upload(path, f, { upsert:false });
+    if(error){ console.warn("upload", path, error.message) }
+  }
+}
+
+/* Edição RDO (abrir) */
+async function openRdoForEdit(id){
+  if(!sb) return;
+  const r = (await sb.from("rdo").select("*").eq("id",id).single()).data;
+  if(!r){ alert("RDO não encontrado"); return }
+  document.querySelector("header nav a[data-tab='#tab-rdo']").click();
+  ["#sec-ident","#sec-pres","#sec-atv","#sec-ocor","#sec-resumo"].forEach(s=>document.querySelector(s).classList.add("open"));
+  gid("rdoObra").value = r.obra_id; gid("rdoNumero").value = r.numero; gid("rdoData").value = r.data; setDow(r.data);
+  gid("horaChegada").value = r.hora_chegada||"08:00"; gid("horaInicioTrab").value = r.inicio_trabalho||"08:00";
+  gid("supSelect").value = r.supervisor_id||""; gid("encIdent").value = r.encarregado_id||""; gid("encFromIdent").value = r.encarregado_id||"";
+  ["climaManha","climaTarde","climaNoite"].forEach(k=> gid(k).value = r[k]||"");
+  const sim = !!r.teve_pts; setPts(sim);
+  if(sim){ gid("ptsNumero").value = r.pts_numero||""; gid("ptsAbertura").value = r.pts_abertura||""; gid("ptsDesc").value = r.pts_desc||""; }
+  const ev = new Event("change"); gid("encIdent").dispatchEvent(ev);
+}
+
+/* Equipamentos & Materiais data */
+const eqRows = []; const matRows = [];
+gid("btnAddEq").addEventListener("click",()=>{
+  const eqSel = gid("eqEquip"); if(!eqSel.value){ alert("Selecione equipamento"); return }
+  const mot = gid("eqMotorista");
+  const row = {
+    equipamento_id:eqSel.value,
+    equipamento_nome:eqSel.options[eqSel.selectedIndex].text,
+    motorista_id:mot.value||null,
+    motorista_nome:mot.value?mot.options[mot.selectedIndex].text:"",
+    h_ini:Number(gid("eqHini").value||0),
+    h_fim:Number(gid("eqHfim").value||0)
+  };
+  eqRows.push(row); renderEq();
+});
+function renderEq(){
+  const tb = gid("tblEq");
+  tb.innerHTML = eqRows.map((r,i)=>`<tr><td>${r.equipamento_nome}</td><td>${r.motorista_nome||"—"}</td><td>${r.h_ini}</td><td>${r.h_fim}</td><td><button class="btn ghost" data-del-eqi="${i}">X</button></td></tr>`).join("");
+}
+document.addEventListener("click",(e)=>{
+  const i = e.target.getAttribute("data-del-eqi"); if(i!=null){ eqRows.splice(+i,1); renderEq() }
+});
+gid("btnAddMat").addEventListener("click",()=>{
+  const m = gid("matItem"); if(!m.value){ alert("Selecione material"); return }
+  const row = { material_id:m.value, material_nome:m.options[m.selectedIndex].text, acao:gid("matAcao").value, qtde:Number(gid("matQtde").value||0), unid:gid("matUnid").value||"" };
+  matRows.push(row); renderMat();
+});
+function renderMat(){
+  const tb = gid("tblMat");
+  tb.innerHTML = matRows.map((r,i)=>`<tr><td>${r.material_nome}</td><td>${r.acao}</td><td>${r.qtde}</td><td>${r.unid}</td><td><button class="btn ghost" data-del-mati="${i}">X</button></td></tr>`).join("");
+}
+document.addEventListener("click",(e)=>{
+  const i = e.target.getAttribute("data-del-mati"); if(i!=null){ matRows.splice(+i,1); renderMat() }
+});
+
+/* ===== Cadastros (CRUD) ===== */
+document.querySelectorAll(".cad-btn").forEach(b=> b.addEventListener("click",()=>{
+  document.querySelectorAll(".cad-btn").forEach(x=>x.classList.remove("active"));
+  b.classList.add("active");
+  ["cad-obras","cad-colab","cad-ativ","cad-eq","cad-mat"].forEach(id=> gid(id).style.display="none");
+  gid(b.dataset.cad.slice(1)).style.display = "block";
+}));
+
+async function onOpenCad(){
+  ["cad-obras","cad-colab","cad-ativ","cad-eq","cad-mat"].forEach(id=> gid(id).style.display="none");
+  gid("cad-obras").style.display="block";
+  await loadCrud();
+}
+async function loadCrud(){
+  if(!sb) return;
+
+  try{
+    await refreshObras();
+    gid("qObras").oninput = refreshObras;
+    gid("btnNewObra").onclick = ()=>{ toggle("formObra"); };
+    gid("btnAddObra").onclick = saveObra;
+
+    await refreshColab();
+    gid("qColab").oninput = refreshColab;
+    gid("btnNewColab").onclick = ()=>{ toggle("formColab"); };
+    gid("btnAddColab").onclick = saveColab;
+
+    await refreshAtiv();
+    gid("qAtiv").oninput = refreshAtiv;
+    gid("btnNewAtiv").onclick = ()=>{ toggle("formAtiv"); };
+    gid("btnAddAtiv").onclick = saveAtiv;
+
+    await refreshEquip();
+    gid("qEquip").oninput = refreshEquip;
+    gid("btnNewEquip").onclick = ()=>{ toggle("formEquip"); };
+    gid("btnAddEquip").onclick = saveEquip;
+
+    await refreshMat();
+    gid("qMat").oninput = refreshMat;
+    gid("btnNewMat").onclick = ()=>{ toggle("formMat"); };
+    gid("btnAddMatSave").onclick = saveMat;
+
+    bindDbl("listaObras", startEditObra);
+    bindDbl("listaColabs", startEditColab);
+    bindDbl("listaAtivs", startEditAtiv);
+    bindDbl("listaEquip", startEditEquip);
+    bindDbl("listaMat", startEditMat);
+  }catch(err){
+    console.warn("Cadastros:", err);
+    toast("Falha ao carregar cadastros (ver console).");
+  }
+}
+function toggle(id){ const el=gid(id); el.style.display = el.style.display==="none" ? "block":"none" }
+function bindDbl(tid,fn){ const tb = gid(tid); if(tb && !tb._dbl){ tb.addEventListener("dblclick",(e)=>{ const tr = e.target.closest("tr"); if(tr) fn(tr.getAttribute("data-id")) }); tb._dbl=true; } }
+
+/* Obras CRUD */
+async function refreshObras(){
+  const f = (gid("qObras").value||"").trim();
+  let q = sb.from("obras").select("id,nome,gestor,escopo").order("nome");
+  if(f) q = q.ilike("nome", "%"+f+"%");
+  const obras = (await q).data||[];
+  gid("listaObras").innerHTML = obras.length? (obras.map(o=>`<tr data-id="${o.id}"><td>${o.nome}</td><td>${o.gestor||"—"}</td><td>${o.escopo||"—"}</td><td><button class="btn ghost" data-del-obra="${o.id}">⋯</button></td></tr>`).join("")) : `<tr><td colspan="4"><div class="badge">Sem obras</div></td></tr>`;
+}
+async function startEditObra(id){
+  const r = (await sb.from("obras").select("*").eq("id",id).single()).data;
+  gid("formObra").style.display="block"; gid("formObra").dataset.id=id;
+  gid("obraNome").value=r.nome||""; gid("obraGestor").value=r.gestor||""; gid("obraEscopo").value=r.escopo||"";
+  gid("obraContrato").value=r.numero_contrato||""; gid("obraInicio").value=r.data_inicio||"";
+  gid("obraAssin").value=r.data_assinatura||""; gid("obraPrev").value=r.previsao_conclusao||"";
+  gid("obraValor").value=r.valor||""; gid("obraResp").value=r.responsavel_tecnico||""; gid("obraART").value=r.numero_art||"";
+  gid("btnAddObra").textContent="Atualizar";
+}
+async function saveObra(){
+  const row={ nome:gid("obraNome").value, gestor:gid("obraGestor").value, escopo:gid("obraEscopo").value,
+    numero_contrato:gid("obraContrato").value, data_inicio:gid("obraInicio").value||null, data_assinatura:gid("obraAssin").value||null,
+    previsao_conclusao:gid("obraPrev").value||null, valor:Number(gid("obraValor").value||0), responsavel_tecnico:gid("obraResp").value, numero_art:gid("obraART").value };
+  const id = gid("formObra").dataset.id;
+  if(id){ await sb.from("obras").update(row).eq("id",id) } else { await sb.from("obras").insert(row) }
+  gid("formObra").dataset.id=""; gid("btnAddObra").textContent="Salvar"; toast("Obra salva"); refreshObras(); loadCombos();
+}
+
+/* Colaboradores CRUD */
+async function refreshColab(){
+  const f = (gid("qColab").value||"").trim();
+  let q = sb.from("colaboradores").select("id,matricula,nome,funcao,local,encarregado_id,situacao,tipo,nfc_tag").order("nome");
+  if(f){ q = q.or(`nome.ilike.%${f}%,matricula.ilike.%${f}%,funcao.ilike.%${f}%`); }
+  const encMap = {}; (await sb.from("colaboradores").select("id,nome")).data?.forEach(e=> encMap[e.id]=e.nome);
+  const faces = (await sb.from("colab_faces").select("colaborador_id").limit(10000)).data||[];
+  const hasFace = new Set(faces.map(x=>x.colaborador_id));
+  const col = (await q).data||[];
+  gid("listaColabs").innerHTML = col.length? (col.map(c=>`<tr data-id="${c.id}"><td>${c.matricula||""}</td><td>${c.nome}</td><td>${c.funcao||""}</td><td>${c.local||""}</td><td>${encMap[c.encarregado_id]||"—"}</td><td>${c.situacao||""}</td><td>${c.tipo||""}</td><td>${c.nfc_tag?c.nfc_tag.slice(0,8)+"…":"—"}</td><td>${hasFace.has(c.id)?"✅":"—"}</td><td><button class="btn ghost" data-del-col="${c.id}">⋯</button></td></tr>`).join("")) : `<tr><td colspan="10"><div class="badge">Sem colaboradores</div></td></tr>`;
+}
+async function startEditColab(id){
+  const r = (await sb.from("colaboradores").select("*").eq("id",id).single()).data;
+  gid("formColab").style.display="block"; gid("formColab").dataset.id=id; gid("btnAddColab").textContent="Atualizar";
+  gid("colMatricula").value=r.matricula||""; gid("colabNome").value=r.nome||""; gid("colabFuncao").value=r.funcao||"";
+  gid("colabLocal").value=r.local||""; gid("colabEncarregado").value=r.encarregado_id||"";
+  gid("colabSituacao").value=r.situacao||"ativo"; gid("colabTipo").value=r.tipo||"";
+  gid("colabTel").value=r.telefone||""; gid("colabEmail").value=r.email||""; gid("colabAdmissao").value=r.admissao||"";
+  gid("colabNFC").value=r.nfc_tag||"";
+  makeSearchableSelect(gid("colabEncarregado"));
+  // Load face preview
+  const fx = await sb.from("colab_faces").select("image_path").eq("colaborador_id",id).single();
+  const prev = gid("colFacePreview"); const info = gid("colFaceInfo");
+  if(fx.data?.image_path){
+    const pub = sb.storage.from("colab_bio").getPublicUrl(fx.data.image_path);
+    prev.src = pub.data.publicUrl; prev.style.display="block"; info.textContent="Face cadastrada.";
+  }else{ prev.style.display="none"; info.textContent="Nenhuma face cadastrada."; }
+}
+async function saveColab(){
+  const mat = gid("colMatricula").value;
+  if(!mat){ alert("Matrícula é obrigatória."); return; }
+  if(!gid("formColab").dataset.id){
+    const exists = await sb.from("colaboradores").select("id", { count:"exact", head:true }).eq("matricula", mat);
+    if(exists.count>0){ alert("Matrícula já cadastrada."); return; }
+  }
+  const row={ matricula:mat, nome:gid("colabNome").value, funcao:gid("colabFuncao").value, local:gid("colabLocal").value,
+    encarregado_id:gid("colabEncarregado").value||null, situacao:gid("colabSituacao").value||"ativo", tipo:gid("colabTipo").value||null,
+    telefone:gid("colabTel").value||null, email:gid("colabEmail").value||null, admissao:gid("colabAdmissao").value||null, nfc_tag:gid("colabNFC").value||null };
+  const id = gid("formColab").dataset.id;
+  if(id){ await sb.from("colaboradores").update(row).eq("id",id) } else {
+    const ins = await sb.from("colaboradores").insert(row).select("id");
+    gid("formColab").dataset.id = ins.data?.[0]?.id || "";
+  }
+  gid("btnAddColab").textContent="Salvar";
+  toast("Colaborador salvo"); refreshColab(); loadCombos();
+}
+
+/* Colaborador: NFC & Face handlers */
+document.getElementById("btnColLerNFC").addEventListener("click", async ()=>{
+  if(!("NDEFReader" in window)){ return alert("NFC não suportado no navegador") }
+  try{
+    const r = new NDEFReader(); await r.scan();
+    r.onreading = async(ev)=>{
+      const idStr = ev.serialNumber || "";
+      gid("colabNFC").value = idStr;
+      toast("Tag lida. Salve o colaborador para gravar.");
+    };
+  }catch(err){ alert("Falha ao ler NFC: "+err.message) }
+});
+let _camCol = null;
+document.getElementById("btnColFaceOpen").addEventListener("click", async ()=>{
+  try{ _camCol = await navigator.mediaDevices.getUserMedia({ video:true, audio:false }); }
+  catch(e){ return alert("Câmera indisponível: "+e.message) }
+  const v = gid("colFaceVideo"); const c = gid("colFaceCanvas");
+  v.srcObject = _camCol; v.style.display="block"; c.style.display="none";
+  gid("btnColFaceCap").disabled=false; gid("btnColFaceSave").disabled=true; gid("btnColFaceClose").disabled=false;
+});
+document.getElementById("btnColFaceCap").addEventListener("click", ()=>{
+  const v = gid("colFaceVideo"); const c = gid("colFaceCanvas");
+  if(!v.srcObject) return;
+  const ctx = c.getContext("2d"); ctx.drawImage(v,0,0,c.width,c.height);
+  c.style.display="block"; v.style.display="none"; v.pause();
+  gid("btnColFaceSave").disabled=false;
+});
+document.getElementById("btnColFaceSave").addEventListener("click", async ()=>{
+  const id = gid("formColab").dataset.id; if(!id){ return alert("Salve o colaborador primeiro para gerar o ID.") }
+  const c = gid("colFaceCanvas"); if(c.style.display==="none"){ return alert("Capture a imagem antes de salvar."); }
+  const blob = await new Promise(res=> c.toBlob(b=>res(b),"image/jpeg",0.9));
+  const path = `faces/${id}.jpg`;
+  const up = await sb.storage.from("colab_bio").upload(path, blob, { upsert:true });
+  if(up.error){ return alert("Upload falhou: "+up.error.message) }
+  // Atuliza tabela
+  await sb.from("colab_faces").upsert({ colaborador_id:id, image_path:path }).catch(()=>{});
+  const pub = sb.storage.from("colab_bio").getPublicUrl(path);
+  gid("colFacePreview").src = pub.data.publicUrl;
+  gid("colFacePreview").style.display="block";
+  gid("colFaceInfo").textContent = "Face cadastrada.";
+  toast("Face cadastrada para o colaborador.");
+});
+document.getElementById("btnColFaceClose").addEventListener("click", ()=>{
+  if(_camCol){ _camCol.getTracks().forEach(t=>t.stop()); _camCol=null; }
+  gid("colFaceVideo").srcObject=null; gid("colFaceVideo").style.display="none"; gid("colFaceCanvas").style.display="none";
+  gid("btnColFaceCap").disabled=true; gid("btnColFaceSave").disabled=true; gid("btnColFaceClose").disabled=true;
+});
+
+/* Atividades CRUD */
+async function refreshAtiv(){
+  const f = (gid("qAtiv").value||"").trim();
+  let q = sb.from("atividades").select("id,nome,cronograma_id,prazo,obras(nome, id)").order("created_at",{ascending:false});
+  if(f){ q = q.ilike("nome","%"+f+"%"); }
+  const atv = (await q).data||[];
+  gid("listaAtivs").innerHTML = atv.length? (atv.map(a=>`<tr data-id="${a.id}"><td>${a.nome}</td><td>${a.obras?.nome||"—"}</td><td>${a.cronograma_id||""}</td><td>${a.prazo||""}</td><td><button class="btn ghost" data-del-atv="${a.id}">⋯</button></td></tr>`).join("")) : `<tr><td colspan="5"><div class="badge">Sem atividades</div></td></tr>`;
+}
+async function startEditAtiv(id){
+  const r = (await sb.from("atividades").select("*").eq("id",id).single()).data;
+  gid("formAtiv").style.display="block"; gid("formAtiv").dataset.id=id; gid("btnAddAtiv").textContent="Atualizar";
+  gid("ativObra").value=r.obra_id||""; gid("ativNome").value=r.nome||""; gid("ativCrono").value=r.cronograma_id||""; gid("ativPrazo").value=r.prazo||"";
+  makeSearchableSelect(gid("ativObra"));
+}
+async function saveAtiv(){
+  const obra_id = gid("ativObra").value||null;
+  const nome = gid("ativNome").value;
+  if(!nome){ alert("Informe o nome da atividade"); return }
+  const row={ obra_id, nome, cronograma_id:gid("ativCrono").value, prazo:Number(gid("ativPrazo").value||0) };
+  const id = gid("formAtiv").dataset.id;
+  if(id){ await sb.from("atividades").update(row).eq("id",id) } else { await sb.from("atividades").insert(row) }
+  gid("formAtiv").dataset.id=""; gid("btnAddAtiv").textContent="Salvar"; toast("Atividade salva"); refreshAtiv(); loadCombos();
+}
+
+/* Equipamentos CRUD */
+async function refreshEquip(){
+  const f = (gid("qEquip").value||"").trim();
+  let q = sb.from("equipamentos").select("id,nome,marca,modelo,motorista_id").order("created_at",{ascending:false});
+  if(f){ q = q.or(`nome.ilike.%${f}%,modelo.ilike.%${f}%`); }
+  const encMap = {}; (await sb.from("colaboradores").select("id,nome")).data?.forEach(e=> encMap[e.id]=e.nome);
+  const eq = (await q).data||[];
+  gid("listaEquip").innerHTML = eq.length? (eq.map(e=>`<tr data-id="${e.id}"><td>${e.nome}</td><td>${e.marca||""}</td><td>${e.modelo||""}</td><td>${encMap[e.motorista_id]||"—"}</td><td><button class="btn ghost" data-del-eq="${e.id}">⋯</button></td></tr>`).join("")) : `<tr><td colspan="5"><div class="badge">Sem equipamentos</div></td></tr>`;
+}
+async function startEditEquip(id){
+  const r = (await sb.from("equipamentos").select("*").eq("id",id).single()).data;
+  gid("formEquip").style.display="block"; gid("formEquip").dataset.id=id; gid("btnAddEquip").textContent="Atualizar";
+  gid("eqcNome").value=r.nome||""; gid("eqcMarca").value=r.marca||""; gid("eqcModelo").value=r.modelo||"";
+  gid("eqcData").value=r.data||""; gid("eqcHKm").value=r.horimetro_km||""; gid("eqcMotorista").value=r.motorista_id||"";
+  makeSearchableSelect(gid("eqcMotorista"));
+}
+async function saveEquip(){
+  const row={ nome:gid("eqcNome").value, marca:gid("eqcMarca").value, modelo:gid("eqcModelo").value,
+    data:gid("eqcData").value||null, horimetro_km:Number(gid("eqcHKm").value||0), motorista_id:gid("eqcMotorista").value||null };
+  const id = gid("formEquip").dataset.id;
+  if(id){ await sb.from("equipamentos").update(row).eq("id",id) } else { await sb.from("equipamentos").insert(row) }
+  gid("formEquip").dataset.id=""; gid("btnAddEquip").textContent="Salvar"; toast("Equipamento salvo"); refreshEquip(); loadCombos();
+}
+
+/* Materiais CRUD */
+async function refreshMat(){
+  const f = (gid("qMat").value||"").trim();
+  let q = sb.from("materiais").select("id,nome,unidade").order("nome");
+  if(f){ q = q.or(`nome.ilike.%${f}%,unidade.ilike.%${f}%`); }
+  const m = (await q).data||[];
+  gid("listaMat").innerHTML = m.length? (m.map(x=>`<tr data-id="${x.id}"><td>${x.nome}</td><td>${x.unidade||""}</td><td><button class="btn ghost" data-del-mat="${x.id}">⋯</button></td></tr>`).join("")) : `<tr><td colspan="3"><div class="badge">Sem materiais</div></td></tr>`;
+}
+async function startEditMat(id){
+  const r = (await sb.from("materiais").select("*").eq("id",id).single()).data;
+  gid("formMat").style.display="block"; gid("formMat").dataset.id=id; gid("btnAddMatSave").textContent="Atualizar";
+  gid("matcNome").value=r.nome||""; gid("matcUnid").value=r.unidade||"";
+}
+async function saveMat(){
+  const nome = gid("matcNome").value||""; const unid = gid("matcUnid").value||"";
+  if(!nome || !unid){ alert("Preencha nome e unidade"); return }
+  const row = { nome, unidade: unid };
+  const id = gid("formMat").dataset.id;
+  if(id){ await sb.from("materiais").update(row).eq("id",id) } else { await sb.from("materiais").insert(row) }
+  gid("formMat").dataset.id=""; gid("btnAddMatSave").textContent="Salvar"; toast("Material salvo"); refreshMat(); loadCombos();
+}
+
+/* Inicial */
+window.addEventListener("load", ()=>{
+  gid("rdoListIni").value = today();
+  gid("rdoListFim").value = today();
+  if("serviceWorker" in navigator){ navigator.serviceWorker.register("./sw.js").catch(()=>{}); }
+});
+</script>
+</body>
+</html>
